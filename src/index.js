@@ -35,6 +35,9 @@ async function run() {
                 label {
                   name
                 }
+                actor {
+                  login
+                }
               }
             }
           }
@@ -43,7 +46,7 @@ async function run() {
     }
   }`);
 
-    core.debug(`labelsByGithubAction keys: ${labelsByGithubAction.toString()}`);
+    core.info(`labelsByGithubAction keys: ${labelsByGithubAction.toString()}`);
 
   } catch (error) {
     core.setFailed(error.message);
