@@ -24,7 +24,7 @@ async function run() {
 
     const labelsByGithubAction = await octokit.graphql(`{
       repository(owner: "${repo.owner}", name: "${repo.repo}") {
-        pullRequest(number: "${pull_request.number}") {
+        pullRequest(number: ${pull_request.number}) {
           timelineItems(last: 100, itemTypes: [LABELED_EVENT]) {
           totalCount
           edges {
