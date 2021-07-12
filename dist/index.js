@@ -6149,7 +6149,7 @@ async function run() {
     }
   }`);
 
-    core.info(`labelsByGithubAction: ${labelsByGithubAction.repository.pullRequest.timelineItems.edges}`);
+    core.info(`labelsByGithubAction: ${JSON.stringify(labelsByGithubAction.repository.pullRequest.timelineItems.edges[0])}`);
 
   } catch (error) {
     core.setFailed(error.message);
