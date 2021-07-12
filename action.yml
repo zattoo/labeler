@@ -1,13 +1,15 @@
-name: 'Wait'
-description: 'Wait a designated number of milliseconds'
+name: 'Project recognition'
+description: 'Allocate labels'
 inputs:
-  milliseconds:  # id of input
-    description: 'number of milliseconds to wait'
+  changed_files:
+    description: 'A list of modified files in .json format'
     required: true
-    default: '1000'
-outputs:
-  time: # output will be available to future steps
-    description: 'The message to output'
+
+  filename:
+    description: 'Filename to look for'
+    required: false
+    default: 'LABEL'
+
 runs:
   using: 'node12'
   main: 'dist/index.js'
