@@ -13,10 +13,10 @@ async function run() {
     // Debug log the payload.
     core.info(`Payload keys: ${Object.keys(context.payload)}`);
 
-    const {
-      event,
-      repo,
-    } = context;
+    const {repo} = context;
+    const {event} = context.payload;
+
+    core.info(context.pull_request);
 
     core.info(event);
 
