@@ -6134,7 +6134,7 @@ async function run() {
             node {
               __typename
               ... on LabeledEvent {
-                actor
+                actor { ... }
                 createdAt
                 label {
                   name
