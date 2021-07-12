@@ -6117,19 +6117,17 @@ async function run() {
     core.info(`Payload keys: ${Object.keys(context.payload)}`);
 
     const {repo} = context;
-    const {event} = context.payload;
+    const {pull_request} = context.payload;
 
-    core.info(context.pull_request);
+    core.info(pull_request);
 
-    core.info(event);
-
-    if(!event.number) {
+    if(!pull_request) {
       core.error('Only pull requests events can trigger this action');
     }
 
     const labelsByGithubAction = await octokit.graphql(`{
       repository(owner: "${repo.owner}", name: "${repo.repo}") {
-        pullRequest(number: ${event.number}) {
+        pullRequest(number: ${pull_request.number}) {
           timelineItems(last: 100, itemTypes: [LABELED_EVENT]) {
           totalCount
           edges {
