@@ -46,7 +46,7 @@ async function run() {
     }
   }`);
 
-    core.info(`labelsByGithubAction keys: ${labelsByGithubAction.toString()}`);
+    core.info(`labelsByGithubAction keys: ${Object.keys(labelsByGithubAction)}`);
 
   } catch (error) {
     core.setFailed(error.message);
