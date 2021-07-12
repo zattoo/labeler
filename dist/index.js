@@ -6114,12 +6114,14 @@ async function run() {
     const filenameFlag = core.getInput('filename', {required: true});
 
     // Debug log the payload.
-    core.debug(`Payload keys: ${Object.keys(context.payload)}`);
+    core.info(`Payload keys: ${Object.keys(context.payload)}`);
 
     const {
       event,
       repo,
     } = context;
+
+    core.info(event);
 
     if(!event.number) {
       core.error('Only pull requests events can trigger this action');
