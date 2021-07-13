@@ -28,7 +28,7 @@ async function run() {
       issue_number: pull_request.number,
     });
 
-    core.info(JSON.stringify(labelsOnPr));
+    core.info(JSON.stringify(labelsOnPr.data));
 
     const query = await octokit.graphql(`{
       repository(owner: "${repo.owner}", name: "${repo.repo}") {
