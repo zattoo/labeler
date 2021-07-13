@@ -6,7 +6,6 @@ const utils = require('./get-labels');
 
 async function run() {
   try {
-
     const github_token = core.getInput('github_token', {required: true});
     const octokit = getOctokit(github_token);
 
@@ -17,17 +16,19 @@ async function run() {
         });
     const filenameFlag = core.getInput('filename', {required: true});
 
-    // Debug log the payload.
-    core.info(`Payload keys: ${Object.keys(context.payload)}`);
-
     const {repo} = context;
     const {pull_request} = context.payload;
-
-    core.info(Object.keys(pull_request));
 
     if(!pull_request) {
       core.error('Only pull requests events can trigger this action');
     }
+
+    const labelsOnPr = await octokit.rest.issues.listLabelsOnIssue({
+      ...repo,
+      issue_number: pull_request.number,
+    });
+
+    core.info(labelsOnPr);
 
     const query = await octokit.graphql(`{
       repository(owner: "${repo.owner}", name: "${repo.repo}") {
@@ -56,29 +57,17 @@ async function run() {
     /** @type {LabelInfo[]} */
     const labelsInfo = query.repository.pullRequest.timelineItems.edges;
 
-
-    core.info(`labelsByGithubAction: ${JSON.stringify(labelsInfo)}`);
-
     const labelsByGithubAction = labelsInfo.reduce((acc, labelInfo) => {
-      core.info(`actor name: ${labelInfo.node.actor.login}`);
-
       if (labelInfo.node.actor.login === 'github-actions') {
-        core.info(labelInfo.node.label.name);
         acc.push(labelInfo.node.label.name);
       }
 
       return acc;
     }, []);
 
-    core.info(`labelsByGithubAction: ${labelsByGithubAction}`);
-
-    core.info(changedFiles);
 
     const labelsFiles = await utils.getLabelsFiles(changedFiles, filenameFlag);
-    core.info(labelsFiles);
-
     const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
-    core.info(labelsFromFiles);
 
     const labelsToRemove = labelsByGithubAction.filter((label) => {
       return !labelsFromFiles.includes(label);
@@ -87,9 +76,6 @@ async function run() {
     const labelsToAdd = labelsFromFiles.filter((label) => {
       return !labelsByGithubAction.includes(label);
     });
-
-    core.info(`labelsToRemove: ${labelsToRemove}`);
-    core.info(`labelsToAdd: ${labelsToAdd}`);
 
     if (labelsToAdd.length > 0) {
       await octokit.rest.issues.addLabels({
