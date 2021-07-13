@@ -1,14 +1,13 @@
 name: 'Project recognition'
-description: 'Allocate labels'
+description: 'Allocate labels depends on changed files'
 inputs:
   changed_files:
-    description: 'A list of modified files in .json format'
+    description: 'A list of modified files in space-delimited string format'
     required: true
 
-  filename:
-    description: 'Filename to look for'
-    required: false
-    default: 'LABEL'
+  label_filename:
+    description: 'Filename which contain label metadata to look for'
+    required: true
 
 runs:
   using: 'node12'

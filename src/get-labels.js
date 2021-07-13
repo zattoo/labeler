@@ -14,9 +14,6 @@ const getLabelsFiles = async (changedFiles, filename) => {
 
     const results = await Promise.all(queue);
 
-    console.log(results);
-
-    console.log([...new Set(results)]);
     return [...new Set(results)];
 };
 
