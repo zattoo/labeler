@@ -28,9 +28,16 @@ const getLabelsFromFiles = async (labelFiles) => {
     const labels = [];
 
     await Promise.all(...[labelFiles.map(async (file) => {
-        const fileData = await fse.readFile(file, 'utf8');
-        const fileLabels = fileData.split('\n');
-        labels.push(...fileLabels);
+        if (!file) {
+            return;
+        }
+        try {
+            const fileData = await fse.readFile(file, 'utf8');
+            const fileLabels = fileData.split('\n');
+            labels.push(...fileLabels);
+        } catch (e) {
+            return Promise.resolve();
+        }
     })]);
 
     return [...new Set(labels)];

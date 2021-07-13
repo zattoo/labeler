@@ -9210,9 +9210,16 @@ const getLabelsFromFiles = async (labelFiles) => {
     const labels = [];
 
     await Promise.all(...[labelFiles.map(async (file) => {
-        const fileData = await fse.readFile(file, 'utf8');
-        const fileLabels = fileData.split('\n');
-        labels.push(...fileLabels);
+        if (!file) {
+            return;
+        }
+        try {
+            const fileData = await fse.readFile(file, 'utf8');
+            const fileLabels = fileData.split('\n');
+            labels.push(...fileLabels);
+        } catch (e) {
+            return Promise.resolve();
+        }
     })]);
 
     return [...new Set(labels)];
@@ -9305,9 +9312,9 @@ async function run() {
 
     core.info(changedFiles);
 
-    core.info(`now sending changed files to getLabels files: ${[changedFiles[0]]}`);
-    const labelsFiles = await utils.getLabelsFiles([changedFiles[0]], filenameFlag);
+    const labelsFiles = await utils.getLabelsFiles(changedFiles, filenameFlag);
     core.info(labelsFiles);
+
     const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
     core.info(labelsFromFiles);
 
