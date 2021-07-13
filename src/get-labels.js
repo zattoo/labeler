@@ -26,7 +26,7 @@ const getLabelsFromFiles = async (labelFiles) => {
         labels.push(...fileLabels);
     })]);
 
-    return new Set(labels);
+    return [...new Set(labels)];
 };
 
 
