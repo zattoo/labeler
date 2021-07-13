@@ -9273,7 +9273,7 @@ async function run() {
 
     const labelsFiles = utils.getLabelsFiles([changedFiles[1]], filenameFlag);
     core.info(labelsFiles);
-    const labelsFromFiles = utils.getLabelsFromFiles(labelsFiles);
+    const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
     core.info(labelsFromFiles);
 
     // TODO add labels and remove labels
