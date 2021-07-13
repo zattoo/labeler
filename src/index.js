@@ -26,10 +26,10 @@ async function run() {
     const labelsOnPr = (await octokit.rest.issues.listLabelsOnIssue({
       ...repo,
       issue_number: pull_request.number,
-    })).data;
-
-    labelsOnPr.map((label) => {
-      return label.name;
+    })).data.map((label) => {
+      if (label) {
+        return label.name;
+      }
     });
 
     const query = await octokit.graphql(`{

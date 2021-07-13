@@ -1,6 +1,6 @@
 const fse = require('fs-extra');
 
-const {findNearestFile} = require('../find-nearest-file');
+const {findNearestFile} = require('./find-nearest-file');
 
 /**
  * @param {string[]} changedFiles
