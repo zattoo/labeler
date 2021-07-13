@@ -1,5 +1,6 @@
 const core = require('@actions/core');
 const {context, getOctokit} = require('@actions/github');
+const utils = require('./get-labels');
 
 async function run() {
   try {
@@ -46,9 +47,41 @@ async function run() {
     }
   }`);
 
-    const labels = query.repository.pullRequest.timelineItems.edges;
+    /** @type {LabelInfo[]} */
+    const labelsInfo = query.repository.pullRequest.timelineItems.edges;
 
-    core.info(`labelsByGithubAction: ${JSON.stringify(labels)}`);
+
+    core.info(`labelsByGithubAction: ${JSON.stringify(labelsInfo)}`);
+
+    const labelsByGithubAction = labelsInfo.reduce((acc, labelInfo) => {
+      core.info(`actor name: ${labelInfo.node.actor.login}`);
+
+      if (labelInfo.node.actor.login === 'github_action') {
+        acc.push(labelInfo.node.label.name);
+      }
+
+      return acc;
+    }, []);
+
+    core.info(`labelsByGithubAction: ${labelsByGithubAction}`);
+
+    const labelsFiles = utils.getLabelsFiles(changedFiles.split(''), filenameFlag);
+    core.info(labelsFiles);
+    const labelsFromFiles = utils.getLabelsFromFiles(labelsFiles);
+    core.info(labelsFromFiles);
+
+    // TODO add labels and remove labels
+
+    const labelsToRemove = labelsByGithubAction.filter((label) => {
+      return !labelsFromFiles.includes(label);
+    });
+
+    const labelsToAdd = labelsFromFiles.filter((label) => {
+      return !labelsByGithubAction.includes(label);
+    });
+
+    core.info(`labelsToRemove: ${labelsToRemove}`);
+    core.info(`labelsToAdd: ${labelsToAdd}`);
 
   } catch (error) {
     core.setFailed(error.message);
@@ -56,3 +89,27 @@ async function run() {
 }
 
 run();
+
+
+/**
+ * @typedef {Object} LabelInfo
+ * @prop {Node} node
+ */
+
+/**
+ * @typedef {Object} Node
+ * @prop {string} __typename
+ * @prop {string} createdAt
+ * @prop {Label} label
+ * @prop {Actor} actor
+ */
+
+/**
+ * @typedef {Object} Actor
+ * @prop {string} login
+ */
+
+/**
+ * @typedef {Object} Label
+ * @prop {string} name
+ */
