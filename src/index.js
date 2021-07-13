@@ -100,15 +100,15 @@ async function run() {
       });
     }
 
-    // if (labelsToRemove.length > 0) {
-    //   await Promise.all(labelsToRemove.map(async (label) => {
-    //     return await octokit.rest.issues.removeLabel({
-    //       ...repo,
-    //       issue_number: pull_request.number,
-    //       name: label,
-    //     });
-    //   }));
-    // }
+    if (labelsToRemove.length > 0) {
+      await Promise.all(labelsToRemove.map(async (label) => {
+        return await octokit.rest.issues.removeLabel({
+          ...repo,
+          issue_number: pull_request.number,
+          name: label,
+        });
+      }));
+    }
   } catch (error) {
     core.setFailed(error.message);
   }
