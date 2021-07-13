@@ -92,6 +92,23 @@ async function run() {
     core.info(`labelsToRemove: ${labelsToRemove}`);
     core.info(`labelsToAdd: ${labelsToAdd}`);
 
+    if (labelsToAdd.length > 0) {
+      await octokit.rest.issues.addLabels({
+        ...repo,
+        issue_number: pull_request.number,
+        labels: labelsToAdd,
+      });
+    }
+
+    if (labelsToRemove.length > 0) {
+      await Promise.all(labelsToRemove.map(async (label) => {
+        return await octokit.rest.issues.removeLabel({
+          ...repo,
+          issue_number: pull_request.number,
+          name: label,
+        });
+      }));
+    }
   } catch (error) {
     core.setFailed(error.message);
   }
