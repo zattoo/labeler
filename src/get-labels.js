@@ -40,7 +40,7 @@ const getLabelsFromFiles = async (labelFiles) => {
         }
     })]);
 
-    return [...new Set(labels)];
+    return [...new Set(labels)].filter(Boolean);
 };
 
 
