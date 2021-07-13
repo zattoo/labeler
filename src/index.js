@@ -74,7 +74,7 @@ async function run() {
     core.info(changedFiles);
 
     core.info(`now sending changed files to getLabels files: ${[changedFiles[0]]}`);
-    const labelsFiles = utils.getLabelsFiles([changedFiles[0]], filenameFlag);
+    const labelsFiles = await utils.getLabelsFiles([changedFiles[0]], filenameFlag);
     core.info(labelsFiles);
     const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
     core.info(labelsFromFiles);
