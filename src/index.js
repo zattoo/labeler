@@ -67,7 +67,7 @@ async function run() {
 
     core.info(changedFiles);
 
-    const labelsFiles = utils.getLabelsFiles(changedFiles[1], filenameFlag);
+    const labelsFiles = utils.getLabelsFiles([changedFiles[1]], filenameFlag);
     core.info(labelsFiles);
     const labelsFromFiles = utils.getLabelsFromFiles(labelsFiles);
     core.info(labelsFromFiles);
