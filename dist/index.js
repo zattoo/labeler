@@ -9299,8 +9299,14 @@ async function run() {
     const labelsInfo = query.repository.pullRequest.timelineItems.edges;
 
     const labelsByGithubAction = labelsInfo.reduce((acc, labelInfo) => {
-      if (labelInfo.node.actor.login === 'github-actions' && labelsOnPr.includes(labelInfo.node.label.name)) {
-        acc.push(labelInfo.node.label.name);
+      const {name} = labelInfo.node.label;
+
+      if (
+          !acc.includes(name) &&
+          labelInfo.node.actor.login === 'github-actions' &&
+          labelsOnPr.includes(name)
+      ) {
+        acc.push(name);
       }
 
       return acc;
