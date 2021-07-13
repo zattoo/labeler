@@ -9301,7 +9301,8 @@ async function run() {
     const labelsByGithubAction = labelsInfo.reduce((acc, labelInfo) => {
       core.info(`actor name: ${labelInfo.node.actor.login}`);
 
-      if (labelInfo.node.actor.login === 'github_action') {
+      if (labelInfo.node.actor.login === 'github-actions') {
+        core.info(labelInfo.node.label.name);
         acc.push(labelInfo.node.label.name);
       }
 
@@ -9317,8 +9318,6 @@ async function run() {
 
     const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
     core.info(labelsFromFiles);
-
-    // TODO add labels and remove labels
 
     const labelsToRemove = labelsByGithubAction.filter((label) => {
       return !labelsFromFiles.includes(label);

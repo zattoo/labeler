@@ -63,6 +63,7 @@ async function run() {
       core.info(`actor name: ${labelInfo.node.actor.login}`);
 
       if (labelInfo.node.actor.login === 'github-actions') {
+        core.info(labelInfo.node.label.name);
         acc.push(labelInfo.node.label.name);
       }
 
