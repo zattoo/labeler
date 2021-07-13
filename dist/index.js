@@ -9262,12 +9262,14 @@ async function run() {
       core.error('Only pull requests events can trigger this action');
     }
 
-    const labelsOnPr = await octokit.rest.issues.listLabelsOnIssue({
+    const labelsOnPr = (await octokit.rest.issues.listLabelsOnIssue({
       ...repo,
       issue_number: pull_request.number,
-    });
+    })).data;
 
-    core.info(JSON.stringify(labelsOnPr.data));
+    labelsOnPr.map((label) => {
+      return label.name;
+    });
 
     const query = await octokit.graphql(`{
       repository(owner: "${repo.owner}", name: "${repo.repo}") {
@@ -9297,7 +9299,7 @@ async function run() {
     const labelsInfo = query.repository.pullRequest.timelineItems.edges;
 
     const labelsByGithubAction = labelsInfo.reduce((acc, labelInfo) => {
-      if (labelInfo.node.actor.login === 'github-actions') {
+      if (labelInfo.node.actor.login === 'github-actions' && labelsOnPr.includes(labelInfo.node.label.name)) {
         acc.push(labelInfo.node.label.name);
       }
 
