@@ -9335,7 +9335,7 @@ async function run() {
       await octokit.rest.issues.addLabels({
         ...repo,
         issue_number: pull_request.number,
-        labels: labelsToAdd,
+        labels: labelsToAdd[1],
       });
     }
 
