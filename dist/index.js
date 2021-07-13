@@ -9269,6 +9269,9 @@ async function run() {
 
     core.info(`labelsByGithubAction: ${labelsByGithubAction}`);
 
+    core.info(changedFiles);
+    core.info(changedFiles.split(''));
+
     const labelsFiles = utils.getLabelsFiles(changedFiles.split(''), filenameFlag);
     core.info(labelsFiles);
     const labelsFromFiles = utils.getLabelsFromFiles(labelsFiles);
