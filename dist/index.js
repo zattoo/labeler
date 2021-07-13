@@ -9212,7 +9212,7 @@ async function run() {
     const github_token = core.getInput('github_token', {required: true});
     const octokit = getOctokit(github_token);
 
-    const changedFiles = core.getInput('changed_files', {required: true});
+    const changedFiles = core.getInput('changed_files', {required: true}).split(' ');
     const filenameFlag = core.getInput('filename', {required: true});
 
     // Debug log the payload.
@@ -9269,9 +9269,9 @@ async function run() {
 
     core.info(`labelsByGithubAction: ${labelsByGithubAction}`);
 
-    core.info(changedFiles.split(' '));
+    core.info(changedFiles);
 
-    const labelsFiles = utils.getLabelsFiles(changedFiles.split(' '), filenameFlag);
+    const labelsFiles = utils.getLabelsFiles(changedFiles, filenameFlag);
     core.info(labelsFiles);
     const labelsFromFiles = utils.getLabelsFromFiles(labelsFiles);
     core.info(labelsFromFiles);
