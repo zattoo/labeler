@@ -1,6 +1,8 @@
+const path = require('path');
 const core = require('@actions/core');
 const {context, getOctokit} = require('@actions/github');
 const utils = require('./get-labels');
+
 
 async function run() {
   try {
@@ -8,7 +10,11 @@ async function run() {
     const github_token = core.getInput('github_token', {required: true});
     const octokit = getOctokit(github_token);
 
-    const changedFiles = core.getInput('changed_files', {required: true}).split(' ');
+    const changedFiles = core.getInput('changed_files', {required: true})
+        .split(' ')
+        .map((filePath) => {
+          return path.join(process.env.GITHUB_WORKSPACE, filePath);
+        });
     const filenameFlag = core.getInput('filename', {required: true});
 
     // Debug log the payload.

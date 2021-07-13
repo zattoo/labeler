@@ -9202,9 +9202,11 @@ module.exports = {
 /***/ 4351:
 /***/ ((__unused_webpack_module, __unused_webpack_exports, __nccwpck_require__) => {
 
+const path = __nccwpck_require__(5622);
 const core = __nccwpck_require__(2186);
 const {context, getOctokit} = __nccwpck_require__(5438);
 const utils = __nccwpck_require__(4077);
+
 
 async function run() {
   try {
@@ -9212,7 +9214,11 @@ async function run() {
     const github_token = core.getInput('github_token', {required: true});
     const octokit = getOctokit(github_token);
 
-    const changedFiles = core.getInput('changed_files', {required: true}).split(' ');
+    const changedFiles = core.getInput('changed_files', {required: true})
+        .split(' ')
+        .map((filePath) => {
+          return path.join(process.env.GITHUB_WORKSPACE, filePath);
+        });
     const filenameFlag = core.getInput('filename', {required: true});
 
     // Debug log the payload.
