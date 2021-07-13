@@ -48,8 +48,6 @@ async function run() {
 
     const labels = query.repository.pullRequest.timelineItems.edges;
 
-    core.info(labels.node, labels.actor);
-
     core.info(`labelsByGithubAction: ${JSON.stringify(labels)}`);
 
   } catch (error) {

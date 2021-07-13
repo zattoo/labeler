@@ -6125,7 +6125,7 @@ async function run() {
       core.error('Only pull requests events can trigger this action');
     }
 
-    const labelsByGithubAction = await octokit.graphql(`{
+    const query = await octokit.graphql(`{
       repository(owner: "${repo.owner}", name: "${repo.repo}") {
         pullRequest(number: ${pull_request.number}) {
           timelineItems(last: 100, itemTypes: [LABELED_EVENT]) {
@@ -6149,7 +6149,9 @@ async function run() {
     }
   }`);
 
-    core.info(`labelsByGithubAction: ${JSON.stringify(labelsByGithubAction.repository.pullRequest.timelineItems.edges[0])}`);
+    const labels = query.repository.pullRequest.timelineItems.edges;
+
+    core.info(`labelsByGithubAction: ${JSON.stringify(labels)}`);
 
   } catch (error) {
     core.setFailed(error.message);
