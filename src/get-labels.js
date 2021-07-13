@@ -1,16 +1,23 @@
 const fse = require('fs-extra');
 
-const findNearestFile = require('find-nearest-file');
+const {findNearestFile} = require('../find-nearest-file');
 
 /**
  * @param {string[]} changedFiles
  * @param {string} filename
  * @returns {string[]}
  */
-const getLabelsFiles = (changedFiles, filename) => {
-    return [...new Set(changedFiles.map((file) => {
-        return findNearestFile(filename, file);
-    }))];
+const getLabelsFiles = async (changedFiles, filename) => {
+    const queue = changedFiles.map(async (filePath) => {
+        return await findNearestFile(filename, filePath);
+    });
+
+    const results = await Promise.all(queue);
+
+    console.log(results);
+
+    console.log([...new Set(results)]);
+    return [...new Set(results)];
 };
 
 /**

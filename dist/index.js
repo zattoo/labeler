@@ -2,6 +2,75 @@ require('./sourcemap-register.js');module.exports =
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 9831:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const path = __nccwpck_require__(5622);
+const fse = __nccwpck_require__(5630);
+
+/**
+ *
+ * @param {string} directory
+ */
+const nextLevelUp = (directory) => {
+    if (directory === '.') {
+        return '/';
+    }
+
+    if (directory === path.resolve('/')) {
+        return null;
+    }
+
+    return  path.dirname(directory);
+};
+
+/**
+ *
+ * @param {string} filename
+ * @param {string} directory
+ */
+const findFile = async (filename, directory) => {
+    if (!directory) {
+        return null;
+    }
+
+    const file = path.join(directory, filename);
+
+    try {
+        const fileExists = await fse.pathExists(file);
+
+        if (fileExists) {
+            return file;
+        }
+
+        return await findFile(filename, nextLevelUp(directory));
+    } catch (e) {
+        return await findFile(filename, nextLevelUp(directory));
+    }
+};
+
+/**
+ *
+ * @param {string} filename
+ * @param {string} [root]
+ */
+const findNearestFile = async (filename, root= process.cwd()) => {
+    if (!filename) {
+        throw new Error('filename is required');
+    }
+
+    if (filename.indexOf('/') !== -1 || filename === '..') {
+        throw new Error('filename must be just a filename and not a path')
+    }
+
+    return await findFile(filename, root);
+};
+
+module.exports = {findNearestFile}
+
+
+/***/ }),
+
 /***/ 7351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -4042,54 +4111,6 @@ class Deprecation extends Error {
 }
 
 exports.Deprecation = Deprecation;
-
-
-/***/ }),
-
-/***/ 3877:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-module.exports = find
-
-var fs = __nccwpck_require__(5747)
-  , path = __nccwpck_require__(5622)
-
-function find(filename, root) {
-
-  root = root || process.cwd();
-
-  if (!filename) throw new Error('filename is required')
-
-  if (filename.indexOf('/') !== -1 || filename === '..') {
-    throw new Error('filename must be just a filename and not a path')
-  }
-
-
-  function findFile(directory, filename) {
-
-    var file = path.join(directory, filename)
-
-    try {
-      // Get the stat for the path, and if this doesn't throw, make sure it's a file
-      if (fs.statSync(file).isFile()) return file
-      // stat existed, but isFile() returned false
-      return nextLevelUp()
-    } catch (e) {
-      // stat did not exist
-      return nextLevelUp()
-    }
-
-    function nextLevelUp() {
-      // Don't proceed to the next directory when already at the fs root
-      if (directory === path.resolve('/')) return null
-      return findFile(path.dirname(directory), filename)
-    }
-
-  }
-
-  return findFile(root, filename)
-
-}
 
 
 /***/ }),
@@ -9161,17 +9182,24 @@ function wrappy (fn, cb) {
 
 const fse = __nccwpck_require__(5630);
 
-const findNearestFile = __nccwpck_require__(3877);
+const {findNearestFile} = __nccwpck_require__(9831);
 
 /**
  * @param {string[]} changedFiles
  * @param {string} filename
  * @returns {string[]}
  */
-const getLabelsFiles = (changedFiles, filename) => {
-    return [...new Set(changedFiles.map((file) => {
-        return findNearestFile(filename, file);
-    }))];
+const getLabelsFiles = async (changedFiles, filename) => {
+    const queue = changedFiles.map(async (filePath) => {
+        return await findNearestFile(filename, filePath);
+    });
+
+    const results = await Promise.all(queue);
+
+    console.log(results);
+
+    console.log([...new Set(results)]);
+    return [...new Set(results)];
 };
 
 /**

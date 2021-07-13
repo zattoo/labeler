@@ -1,19 +1,19 @@
 const {getLabelsFiles, getLabelsFromFiles} = require('../src/get-labels');
 
 describe(getLabelsFiles.name, () => {
-    it('gets label files', () => {
+    it('gets label files', async () => {
         const changedFiles = ['test/projects/app/src/features/example.js'];
-        expect(getLabelsFiles(changedFiles, 'LABEL')).toEqual(['test/projects/app/LABEL']);
+        expect(await getLabelsFiles(changedFiles, 'LABEL')).toEqual(['test/projects/app/LABEL']);
     });
 
-    it('gets label files for multiple files', () => {
+    it('gets label files for multiple files', async () => {
         const changedFiles = ['test/projects/app/src/features/example.js', 'test/projects/cast/src/index.js'];
-        expect(getLabelsFiles(changedFiles, 'LABEL')).toEqual(['test/projects/app/LABEL', 'test/projects/cast/LABEL']);
+        expect(await getLabelsFiles(changedFiles, 'LABEL')).toEqual(['test/projects/app/LABEL', 'test/projects/cast/LABEL']);
     });
 
-    it('doesnt break on dot files', () => {
-        const changedFiles = ['/home/runner/work/web/web/.github/workflows/pr.yml'];
-        expect(getLabelsFiles(changedFiles, 'LABEL')).toEqual([null]);
+    it('doesnt break on dot files', async () => {
+        const changedFiles = ['.github/workflows/pr.yml'];
+        expect(await getLabelsFiles(changedFiles, 'LABEL')).toEqual([null]);
 
     });
 });
