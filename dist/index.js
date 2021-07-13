@@ -9318,6 +9318,11 @@ async function run() {
       return !labelsByGithubAction.includes(label);
     });
 
+    core.info(`labelsOnPr: ${labelsOnPr}`);
+    core.info(`labelsByGithubAction: ${labelsByGithubAction}`);
+    core.info(`labelsToRemove: ${labelsToRemove}`);
+    core.info(`labelsToAdd: ${labelsToAdd}`);
+
     if (labelsToAdd.length > 0) {
       await octokit.rest.issues.addLabels({
         ...repo,
