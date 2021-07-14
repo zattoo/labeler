@@ -4,15 +4,12 @@ inputs:
   label_filename:
     description: 'Filename which contain label metadata to look for'
     required: true
-
   token:
     description: 'GitHub token'
     required: true
-
 runs:
   using: 'node12'
   main: 'dist/index.js'
-
 branding:
   icon: target
-  color: black
+  color: gray-dark
