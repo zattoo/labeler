@@ -9351,7 +9351,6 @@ const utils = __nccwpck_require__(4077);
             core.info('failed to get the authenticated user');
         }
 
-        core.info(`user: ${user}`);
         return user;
     };
 

@@ -49,7 +49,6 @@ const utils = require('./get-labels');
             core.info('failed to get the authenticated user');
         }
 
-        core.info(`user: ${user}`);
         return user;
     };
 
