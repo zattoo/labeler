@@ -1,10 +1,6 @@
 name: 'Project recognition'
 description: 'Allocate labels depends on changed files'
 inputs:
-  changed_files:
-    description: 'A list of modified files in space-delimited string format'
-    required: true
-
   label_filename:
     description: 'Filename which contain label metadata to look for'
     required: true

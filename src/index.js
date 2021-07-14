@@ -38,16 +38,6 @@ const utils = require('./get-labels');
     const octokit = getOctokit(github_token);
     const {repo} = context;
     const {pull_request} = context.payload;
-    // /**
-    // * Get changed files split them to array and add root path
-    // * @see https://docs.github.com/en/actions/reference/environment-variables
-    // */
-    // const changedFiles = core.getInput('changed_files', {required: true})
-    //     .split(' ')
-    //     .map((filePath) => {
-    //         return path.join(process.env.GITHUB_WORKSPACE, filePath);
-    //   });
-
     const changedFiles = await getChangedFiles(octokit, pull_request.number);
 
     core.info(Object.keys(octokit));
