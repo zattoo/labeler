@@ -40,15 +40,17 @@ const utils = require('./get-labels');
      * @returns {string}
      */
     const getUser = async (octokit) => {
+        let user = 'github-actions';
+
         try {
             const auth = await octokit.rest.users.getAuthenticated();
-            core.info(`user params: ${Object.keys(auth.data)}`);
-            return auth.data.login;
-
+            user =  auth.data.login;
         } catch (e) {
             core.info('failed to get the authenticated user');
-            return 'github-actions';
         }
+
+        core.info(`user: ${user}`);
+        return user;
     };
 
     const github_token = core.getInput('token', {required: true});
@@ -126,6 +128,9 @@ const utils = require('./get-labels');
 
     // get labels
     const labelsFiles = await utils.getLabelsFiles(changedFiles, labelFilename);
+    core.info(`labelsFiles: ${labelsFiles}`);
+    core.info(`changed files: ${changedFiles}`);
+
     const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
 
     const labelsToRemove = labelsByGithubAction.filter((label) => {
