@@ -9314,8 +9314,24 @@ const {
     context,
     getOctokit,
 } = __nccwpck_require__(5438);
+const {findNearestFile} = __nccwpck_require__(9772);
 const utils = __nccwpck_require__(4077);
 
+/**
+ * @param {string[]} changedFiles
+ * @param {string} filename
+ * @returns {string[]}
+ */
+const getLabelsFiles = async (changedFiles, filename) => {
+    const queue = changedFiles.map(async (filePath) => {
+        core.info(filePath);
+        return await findNearestFile(filename, filePath);
+    });
+
+    const results = await Promise.all(queue);
+
+    return [...new Set(results)];
+};
 
 (async () => {
     /**
@@ -9434,7 +9450,7 @@ const utils = __nccwpck_require__(4077);
 
 
     // get labels
-    const labelsFiles = await utils.getLabelsFiles(changedFiles, labelFilename);
+    const labelsFiles = await getLabelsFiles(changedFiles, labelFilename);
     core.info(`labelsFiles: ${labelsFiles}`);
     core.info(`changed files: ${changedFiles}`);
 

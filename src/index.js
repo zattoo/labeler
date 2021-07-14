@@ -4,8 +4,24 @@ const {
     context,
     getOctokit,
 } = require('@actions/github');
+const {findNearestFile} = require('./find-nearest-file');
 const utils = require('./get-labels');
 
+/**
+ * @param {string[]} changedFiles
+ * @param {string} filename
+ * @returns {string[]}
+ */
+const getLabelsFiles = async (changedFiles, filename) => {
+    const queue = changedFiles.map(async (filePath) => {
+        core.info(filePath);
+        return await findNearestFile(filename, filePath);
+    });
+
+    const results = await Promise.all(queue);
+
+    return [...new Set(results)];
+};
 
 (async () => {
     /**
@@ -124,7 +140,7 @@ const utils = require('./get-labels');
 
 
     // get labels
-    const labelsFiles = await utils.getLabelsFiles(changedFiles, labelFilename);
+    const labelsFiles = await getLabelsFiles(changedFiles, labelFilename);
     core.info(`labelsFiles: ${labelsFiles}`);
     core.info(`changed files: ${changedFiles}`);
 
