@@ -9301,46 +9301,55 @@ module.exports = {
 
 const path = __nccwpck_require__(5622);
 const core = __nccwpck_require__(2186);
-const {context, getOctokit} = __nccwpck_require__(5438);
+const {
+    context,
+    getOctokit,
+} = __nccwpck_require__(5438);
 const utils = __nccwpck_require__(4077);
 
 
-async function run() {
-  try {
+(async () => {
     const github_token = core.getInput('github_token', {required: true});
-    const octokit = getOctokit(github_token);
-
-    core.info(Object.keys(octokit));
-    core.info(await octokit.rest.users.getAuthenticated());
 
     /**
-     * Get changed files split them to array and add root path
-     * @see https://docs.github.com/en/actions/reference/environment-variables
-     */
+    * Get changed files split them to array and add root path
+    * @see https://docs.github.com/en/actions/reference/environment-variables
+    */
     const changedFiles = core.getInput('changed_files', {required: true})
         .split(' ')
         .map((filePath) => {
-          return path.join(process.env.GITHUB_WORKSPACE, filePath);
-        });
+            return path.join(process.env.GITHUB_WORKSPACE, filePath);
+      });
 
     const labelFilename = core.getInput('label_filename', {required: true});
+
+    const octokit = getOctokit(github_token);
+
+    core.info(Object.keys(octokit));
+
+    try {
+        core.info(await octokit.rest.users.getAuthenticated());
+    } catch (e) {
+        core.info('failed to get the authenticated user');
+        core.info(e);
+    }
 
     const {repo} = context;
     const {pull_request} = context.payload;
 
     // Works only on pull-requests
     if(!pull_request) {
-      core.error('Only pull requests events can trigger this action');
+        core.error('Only pull requests events can trigger this action');
     }
 
     // get the current labels on the pull-request
     const labelsOnPr = (await octokit.rest.issues.listLabelsOnIssue({
-      ...repo,
-      issue_number: pull_request.number,
+        ...repo,
+        issue_number: pull_request.number,
     })).data.map((label) => {
-      if (label) {
-        return label.name;
-      }
+        if (label) {
+            return label.name;
+        }
     });
 
     // get the labels history on the pull-request
@@ -9373,18 +9382,18 @@ async function run() {
 
     // reducing the query to labels only
     const labelsByGithubAction = labelsInfo.reduce((acc, labelInfo) => {
-      const {name} = labelInfo.node.label;
+        const {name} = labelInfo.node.label;
 
-      // If not included already, match github-actions actor and is currently used on the pull-request
-      if (
-          !acc.includes(name) &&
-          labelInfo.node.actor.login === 'github-actions' &&
-          labelsOnPr.includes(name)
-      ) {
-        acc.push(name);
-      }
+        // If not included already, match github-actions actor and is currently used on the pull-request
+        if (
+            !acc.includes(name) &&
+            labelInfo.node.actor.login === 'github-actions' &&
+            labelsOnPr.includes(name)
+        ) {
+            acc.push(name);
+        }
 
-      return acc;
+        return acc;
     }, []);
 
 
@@ -9393,11 +9402,11 @@ async function run() {
     const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
 
     const labelsToRemove = labelsByGithubAction.filter((label) => {
-      return !labelsFromFiles.includes(label);
+        return !labelsFromFiles.includes(label);
     });
 
     const labelsToAdd = labelsFromFiles.filter((label) => {
-      return !labelsByGithubAction.includes(label);
+        return !labelsByGithubAction.includes(label);
     });
 
     core.info(`labelsOnPr: ${labelsOnPr}`);
@@ -9407,29 +9416,27 @@ async function run() {
 
     // add labels
     if (labelsToAdd.length > 0) {
-      await octokit.rest.issues.addLabels({
-        ...repo,
-        issue_number: pull_request.number,
-        labels: labelsToAdd,
+        await octokit.rest.issues.addLabels({
+            ...repo,
+            issue_number: pull_request.number,
+            labels: labelsToAdd,
       });
     }
 
     // remove labels
     if (labelsToRemove.length > 0) {
-      await Promise.all(labelsToRemove.map(async (label) => {
-        return await octokit.rest.issues.removeLabel({
-          ...repo,
-          issue_number: pull_request.number,
-          name: label,
-        });
-      }));
+        await Promise.all(labelsToRemove.map(async (label) => {
+            return await octokit.rest.issues.removeLabel({
+                ...repo,
+                issue_number: pull_request.number,
+                name: label,
+            });
+        }));
     }
-  } catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-run();
+})().catch((error) => {
+    core.setFailed(error);
+    process.exit(1);
+});
 
 
 /**
