@@ -9362,10 +9362,7 @@ const utils = __nccwpck_require__(4077);
 
     const changedFiles = await getChangedFiles(octokit, pull_request.number);
     const user = await getUser(octokit);
-
-    core.info(Object.keys(octokit));
-
-
+    core.info(`labelFilename: ${labelFilename}`);
 
     // Works only on pull-requests
     if(!pull_request) {
