@@ -1,22 +1,34 @@
 # Project recognition
 
-GitHub Action to recognize areas in the code which were affected and labeling by meta-files
+GitHub Action to recognize areas in the code which were affected and labeling by metadata files
 
 ## Inputs
 
-### `changed_files`
+### `token`
 
 `string`
 
-Required. A list of modified files in space-delimited string format
+Required. GitHub token
 
 ### `label_filename`
 
 `string`
 
-Filename which contain label metadata to look for
+Required. Filename which contain label metadata to look for
 
-## Usage Example
+## Usage
+
+### Metadata file
+The metadata file contains list of labels separated by break-line between which should be assigned ot all sub-paths.
+```yml
+# name: projects/common/.labels
+infrastrucrue
+```
+
+If the changed file was `projects/common/utils/time.js` the action will search for the closest `label_filename` (e.g `.labels`)
+In the current example `projects/common/.labels` is the closest one so all the labels listed in that file will be assigned.
+
+### Workflow
 
 ````yaml
 name: Project recognition
@@ -25,13 +37,9 @@ jobs:
         name: Assign labels
         runs-on: ubuntu-latest
         steps:
-          - name: changed files
-            id: changed-files
-            uses: jitterbit/get-changed-files@v1
-            with:
-              format: space-delimited
+          - uses: actions/checkout@v2
           - uses: zattoo/project-recognition@v1
             with:
-              changed_files: ${{steps.changed-files.outputs.all}}
-              filename: '.labels'
+              token: ${{secrets.TOKEN}}
+              label_filename: '.labels'
 ````

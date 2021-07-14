@@ -1,5 +1,4 @@
 const fse = require('fs-extra');
-const core = require('@actions/core');
 
 const {findNearestFile} = require('./find-nearest-file');
 
@@ -10,7 +9,6 @@ const {findNearestFile} = require('./find-nearest-file');
  */
 const getLabelsFiles = async (changedFiles, filename) => {
     const queue = changedFiles.map(async (filePath) => {
-        core.info(filePath);
         return await findNearestFile(filename, filePath);
     });
 
@@ -31,14 +29,12 @@ const getLabelsFromFiles = async (labelFiles) => {
             return;
         }
 
-        core.info(file);
-
         try {
             const fileData = await fse.readFile(file, 'utf8');
             const fileLabels = fileData.split('\n');
             labels.push(...fileLabels);
         } catch (e) {
-            core.info(`file: ${file} errored while reading data: ${e}`);
+            console.error(`file: ${file} errored while reading data: ${e}`);
             return Promise.resolve();
         }
     })]);

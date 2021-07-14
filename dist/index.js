@@ -9177,7 +9177,6 @@ function wrappy (fn, cb) {
 
 const path = __nccwpck_require__(5622);
 const fse = __nccwpck_require__(5630);
-const core = __nccwpck_require__(2186);
 
 /**
  *
@@ -9209,7 +9208,6 @@ const findFile = async (filename, directory) => {
 
     try {
         const fileExists = await fse.pathExists(file);
-        core.info(`is ${file} exists: ${fileExists}`);
 
         if (fileExists) {
             return file;
@@ -9228,13 +9226,11 @@ const findFile = async (filename, directory) => {
  */
 const findNearestFile = async (filename, root= process.cwd()) => {
     if (!filename) {
-        core.error('filename is required');
         throw new Error('filename is required');
     }
 
     if (filename.indexOf('/') !== -1 || filename === '..') {
-        core.error('filename must be just a filename and not a path');
-        throw new Error('filename must be just a filename and not a path');
+        throw new Error('filename must be just a filename and not a path')
     }
 
     return await findFile(filename, root);
@@ -9249,7 +9245,6 @@ module.exports = {findNearestFile}
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const fse = __nccwpck_require__(5630);
-const core = __nccwpck_require__(2186);
 
 const {findNearestFile} = __nccwpck_require__(9772);
 
@@ -9260,7 +9255,6 @@ const {findNearestFile} = __nccwpck_require__(9772);
  */
 const getLabelsFiles = async (changedFiles, filename) => {
     const queue = changedFiles.map(async (filePath) => {
-        core.info(filePath);
         return await findNearestFile(filename, filePath);
     });
 
@@ -9281,14 +9275,12 @@ const getLabelsFromFiles = async (labelFiles) => {
             return;
         }
 
-        core.info(file);
-
         try {
             const fileData = await fse.readFile(file, 'utf8');
             const fileLabels = fileData.split('\n');
             labels.push(...fileLabels);
         } catch (e) {
-            core.info(`file: ${file} errored while reading data: ${e}`);
+            console.error(`file: ${file} errored while reading data: ${e}`);
             return Promise.resolve();
         }
     })]);
@@ -9314,24 +9306,8 @@ const {
     context,
     getOctokit,
 } = __nccwpck_require__(5438);
-const {findNearestFile} = __nccwpck_require__(9772);
 const utils = __nccwpck_require__(4077);
 
-/**
- * @param {string[]} changedFiles
- * @param {string} filename
- * @returns {string[]}
- */
-const getLabelsFiles = async (changedFiles, filename) => {
-    const queue = changedFiles.map(async (filePath) => {
-        core.info(filePath);
-        return await findNearestFile(filename, filePath);
-    });
-
-    const results = await Promise.all(queue);
-
-    return [...new Set(results)];
-};
 
 (async () => {
     /**
@@ -9385,12 +9361,16 @@ const getLabelsFiles = async (changedFiles, filename) => {
     const {repo} = context;
     const {pull_request} = context.payload;
 
-    const changedFiles = await getChangedFiles(octokit, pull_request.number);
-    const user = await getUser(octokit);
-    core.info(`labelFilename: ${labelFilename}`);
+    const [changedFiles, user] = await Promise.all([
+        getChangedFiles(octokit, pull_request.number),
+        getUser(octokit),
+    ]);
+
+    core.info(`Label to search for: ${labelFilename}`);
+    core.info(`Token user: ${user}`);
 
     // Works only on pull-requests
-    if(!pull_request) {
+    if (!pull_request) {
         core.error('Only pull requests events can trigger this action');
     }
 
@@ -9433,7 +9413,7 @@ const getLabelsFiles = async (changedFiles, filename) => {
     const labelsInfo = query.repository.pullRequest.timelineItems.edges;
 
     // reducing the query to labels only
-    const labelsByGithubAction = labelsInfo.reduce((acc, labelInfo) => {
+    const labeledByTheAction = labelsInfo.reduce((acc, labelInfo) => {
         const {name} = labelInfo.node.label;
 
         // If not included already, match github-actions actor and is currently used on the pull-request
@@ -9450,24 +9430,21 @@ const getLabelsFiles = async (changedFiles, filename) => {
 
 
     // get labels
-    const labelsFiles = await getLabelsFiles(changedFiles, labelFilename);
-    core.info(`labelsFiles: ${labelsFiles}`);
-    core.info(`changed files: ${changedFiles}`);
-
+    const labelsFiles = await utils.getLabelsFiles(changedFiles, labelFilename);
     const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
 
-    const labelsToRemove = labelsByGithubAction.filter((label) => {
+    const labelsToRemove = labeledByTheAction.filter((label) => {
         return !labelsFromFiles.includes(label);
     });
 
     const labelsToAdd = labelsFromFiles.filter((label) => {
-        return !labelsByGithubAction.includes(label);
+        return !labeledByTheAction.includes(label);
     });
 
-    core.info(`labelsOnPr: ${labelsOnPr}`);
-    core.info(`labelsByGithubAction: ${labelsByGithubAction}`);
-    core.info(`labelsToRemove: ${labelsToRemove}`);
-    core.info(`labelsToAdd: ${labelsToAdd}`);
+    core.info(`labels assigned to pull-request: ${labelsOnPr}`);
+    core.info(`labels which were added by the action: ${labeledByTheAction}`);
+    core.info(`labels to remove: ${labelsToRemove}`);
+    core.info(`labels to add: ${labelsToAdd}`);
 
     // add labels
     if (labelsToAdd.length > 0) {

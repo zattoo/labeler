@@ -1,6 +1,5 @@
 const path = require('path');
 const fse = require('fs-extra');
-const core = require('@actions/core');
 
 /**
  *
@@ -32,7 +31,6 @@ const findFile = async (filename, directory) => {
 
     try {
         const fileExists = await fse.pathExists(file);
-        core.info(`is ${file} exists: ${fileExists}`);
 
         if (fileExists) {
             return file;
@@ -51,13 +49,11 @@ const findFile = async (filename, directory) => {
  */
 const findNearestFile = async (filename, root= process.cwd()) => {
     if (!filename) {
-        core.error('filename is required');
         throw new Error('filename is required');
     }
 
     if (filename.indexOf('/') !== -1 || filename === '..') {
-        core.error('filename must be just a filename and not a path');
-        throw new Error('filename must be just a filename and not a path');
+        throw new Error('filename must be just a filename and not a path')
     }
 
     return await findFile(filename, root);

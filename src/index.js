@@ -4,24 +4,8 @@ const {
     context,
     getOctokit,
 } = require('@actions/github');
-const {findNearestFile} = require('./find-nearest-file');
 const utils = require('./get-labels');
 
-/**
- * @param {string[]} changedFiles
- * @param {string} filename
- * @returns {string[]}
- */
-const getLabelsFiles = async (changedFiles, filename) => {
-    const queue = changedFiles.map(async (filePath) => {
-        core.info(filePath);
-        return await findNearestFile(filename, filePath);
-    });
-
-    const results = await Promise.all(queue);
-
-    return [...new Set(results)];
-};
 
 (async () => {
     /**
@@ -75,12 +59,16 @@ const getLabelsFiles = async (changedFiles, filename) => {
     const {repo} = context;
     const {pull_request} = context.payload;
 
-    const changedFiles = await getChangedFiles(octokit, pull_request.number);
-    const user = await getUser(octokit);
-    core.info(`labelFilename: ${labelFilename}`);
+    const [changedFiles, user] = await Promise.all([
+        getChangedFiles(octokit, pull_request.number),
+        getUser(octokit),
+    ]);
+
+    core.info(`Label to search for: ${labelFilename}`);
+    core.info(`Token user: ${user}`);
 
     // Works only on pull-requests
-    if(!pull_request) {
+    if (!pull_request) {
         core.error('Only pull requests events can trigger this action');
     }
 
@@ -123,7 +111,7 @@ const getLabelsFiles = async (changedFiles, filename) => {
     const labelsInfo = query.repository.pullRequest.timelineItems.edges;
 
     // reducing the query to labels only
-    const labelsByGithubAction = labelsInfo.reduce((acc, labelInfo) => {
+    const labeledByTheAction = labelsInfo.reduce((acc, labelInfo) => {
         const {name} = labelInfo.node.label;
 
         // If not included already, match github-actions actor and is currently used on the pull-request
@@ -140,24 +128,21 @@ const getLabelsFiles = async (changedFiles, filename) => {
 
 
     // get labels
-    const labelsFiles = await getLabelsFiles(changedFiles, labelFilename);
-    core.info(`labelsFiles: ${labelsFiles}`);
-    core.info(`changed files: ${changedFiles}`);
-
+    const labelsFiles = await utils.getLabelsFiles(changedFiles, labelFilename);
     const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
 
-    const labelsToRemove = labelsByGithubAction.filter((label) => {
+    const labelsToRemove = labeledByTheAction.filter((label) => {
         return !labelsFromFiles.includes(label);
     });
 
     const labelsToAdd = labelsFromFiles.filter((label) => {
-        return !labelsByGithubAction.includes(label);
+        return !labeledByTheAction.includes(label);
     });
 
-    core.info(`labelsOnPr: ${labelsOnPr}`);
-    core.info(`labelsByGithubAction: ${labelsByGithubAction}`);
-    core.info(`labelsToRemove: ${labelsToRemove}`);
-    core.info(`labelsToAdd: ${labelsToAdd}`);
+    core.info(`labels assigned to pull-request: ${labelsOnPr}`);
+    core.info(`labels which were added by the action: ${labeledByTheAction}`);
+    core.info(`labels to remove: ${labelsToRemove}`);
+    core.info(`labels to add: ${labelsToAdd}`);
 
     // add labels
     if (labelsToAdd.length > 0) {
