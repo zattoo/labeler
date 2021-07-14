@@ -42,8 +42,8 @@ const utils = require('./get-labels');
     const getUser = async (octokit) => {
         try {
             const auth = await octokit.rest.users.getAuthenticated();
-            core.info(`user params: ${Object.keys(auth)}`);
-            return auth.login;
+            core.info(`user params: ${Object.keys(auth.data)}`);
+            return auth.data.login;
 
         } catch (e) {
             core.info('failed to get the authenticated user');
