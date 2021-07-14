@@ -9299,7 +9299,7 @@ module.exports = {
 /***/ 4351:
 /***/ ((__unused_webpack_module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const path = __nccwpck_require__(5622);
+// const path = require('path');
 const core = __nccwpck_require__(2186);
 const {
     context,
@@ -9309,21 +9309,47 @@ const utils = __nccwpck_require__(4077);
 
 
 (async () => {
-    const github_token = core.getInput('github_token', {required: true});
-
     /**
-    * Get changed files split them to array and add root path
-    * @see https://docs.github.com/en/actions/reference/environment-variables
-    */
-    const changedFiles = core.getInput('changed_files', {required: true})
-        .split(' ')
-        .map((filePath) => {
-            return path.join(process.env.GITHUB_WORKSPACE, filePath);
-      });
+     *
+     * @param {InstanceType<typeof GitHub>} client
+     * @param {number} pull_number
+     */
+    const getChangedFiles = async (octokit, pull_number) => {
+        const {repo} = context;
+        const listFilesOptions = octokit.rest.pulls.listFiles.endpoint.merge({
+            ...repo,
+            pull_number,
+        });
 
+        const listFilesResponse = await octokit.paginate(listFilesOptions);
+
+        const changedFiles = listFilesResponse.map((file) => file.filename);
+
+        core.info("Changed files:");
+        for (const file of changedFiles) {
+            core.info(` - ${file}`);
+        }
+
+        return changedFiles;
+    };
+
+
+    const github_token = core.getInput('github_token', {required: true});
     const labelFilename = core.getInput('label_filename', {required: true});
-
     const octokit = getOctokit(github_token);
+    const {repo} = context;
+    const {pull_request} = context.payload;
+    // /**
+    // * Get changed files split them to array and add root path
+    // * @see https://docs.github.com/en/actions/reference/environment-variables
+    // */
+    // const changedFiles = core.getInput('changed_files', {required: true})
+    //     .split(' ')
+    //     .map((filePath) => {
+    //         return path.join(process.env.GITHUB_WORKSPACE, filePath);
+    //   });
+
+    const changedFiles = await getChangedFiles(octokit, pull_request.number);
 
     core.info(Object.keys(octokit));
 
@@ -9333,9 +9359,6 @@ const utils = __nccwpck_require__(4077);
         core.info('failed to get the authenticated user');
         core.info(e);
     }
-
-    const {repo} = context;
-    const {pull_request} = context.payload;
 
     // Works only on pull-requests
     if(!pull_request) {
