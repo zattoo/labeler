@@ -1,6 +1,6 @@
 # Project recognition
 
-GitHub Action to recognize areas in the code which were affected and labeling by metadata files
+GitHub Action to recognize areas in the code that were affected and label by metadata files
 
 ## Inputs
 
