@@ -9299,7 +9299,7 @@ module.exports = {
 /***/ 4351:
 /***/ ((__unused_webpack_module, __unused_webpack_exports, __nccwpck_require__) => {
 
-// const path = require('path');
+const path = __nccwpck_require__(5622);
 const core = __nccwpck_require__(2186);
 const {
     context,
@@ -9310,9 +9310,9 @@ const utils = __nccwpck_require__(4077);
 
 (async () => {
     /**
-     *
-     * @param {InstanceType<typeof GitHub>} client
+     * @param {InstanceType<typeof GitHub>} octokit
      * @param {number} pull_number
+     * @returns {string[]}
      */
     const getChangedFiles = async (octokit, pull_number) => {
         const {repo} = context;
@@ -9323,32 +9323,47 @@ const utils = __nccwpck_require__(4077);
 
         const listFilesResponse = await octokit.paginate(listFilesOptions);
 
-        const changedFiles = listFilesResponse.map((file) => file.filename);
-
         core.info("Changed files:");
-        for (const file of changedFiles) {
-            core.info(` - ${file}`);
-        }
+        const changedFiles = listFilesResponse.map((file) => {
+            core.info(` - ${file.filename}`);
+
+            // @see https://docs.github.com/en/actions/reference/environment-variables
+            return path.join(process.env.GITHUB_WORKSPACE, file.filename);
+        });
 
         return changedFiles;
     };
 
+    /**
+     *  Get the user which the token belongs to
+     *  if no user found we fallback to 'github-actions'
+     * @param {InstanceType<typeof GitHub>} octokit
+     * @returns {string}
+     */
+    const getUser = async (octokit) => {
+        try {
+            const auth = await octokit.rest.users.getAuthenticated();
+            core.info(`user params: ${Object.keys(auth)}`);
+            return auth.login;
 
-    const github_token = core.getInput('github_token', {required: true});
+        } catch (e) {
+            core.info('failed to get the authenticated user');
+            return 'github-actions';
+        }
+    };
+
+    const github_token = core.getInput('token', {required: true});
     const labelFilename = core.getInput('label_filename', {required: true});
     const octokit = getOctokit(github_token);
     const {repo} = context;
     const {pull_request} = context.payload;
+
     const changedFiles = await getChangedFiles(octokit, pull_request.number);
+    const user = await getUser(octokit);
 
     core.info(Object.keys(octokit));
 
-    try {
-        core.info(await octokit.rest.users.getAuthenticated());
-    } catch (e) {
-        core.info('failed to get the authenticated user');
-        core.info(e);
-    }
+
 
     // Works only on pull-requests
     if(!pull_request) {
@@ -9400,7 +9415,7 @@ const utils = __nccwpck_require__(4077);
         // If not included already, match github-actions actor and is currently used on the pull-request
         if (
             !acc.includes(name) &&
-            labelInfo.node.actor.login === 'github-actions' &&
+            labelInfo.node.actor.login === user &&
             labelsOnPr.includes(name)
         ) {
             acc.push(name);
