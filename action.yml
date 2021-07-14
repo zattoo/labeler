@@ -9,6 +9,10 @@ inputs:
     description: 'Filename which contain label metadata to look for'
     required: true
 
+  token:
+    description: 'GitHub token'
+    required: true
+
 runs:
   using: 'node12'
   main: 'dist/index.js'

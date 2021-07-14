@@ -9279,6 +9279,7 @@ const getLabelsFromFiles = async (labelFiles) => {
             const fileLabels = fileData.split('\n');
             labels.push(...fileLabels);
         } catch (e) {
+            console.error(`file: ${file} errored while reading data: ${e}`);
             return Promise.resolve();
         }
     })]);
@@ -9308,6 +9309,9 @@ async function run() {
   try {
     const github_token = core.getInput('github_token', {required: true});
     const octokit = getOctokit(github_token);
+
+    core.info(Object.keys(octokit));
+    core.info(await octokit.rest.users.getAuthenticated());
 
     /**
      * Get changed files split them to array and add root path
@@ -9371,6 +9375,7 @@ async function run() {
     const labelsByGithubAction = labelsInfo.reduce((acc, labelInfo) => {
       const {name} = labelInfo.node.label;
 
+      // If not included already, match github-actions actor and is currently used on the pull-request
       if (
           !acc.includes(name) &&
           labelInfo.node.actor.login === 'github-actions' &&

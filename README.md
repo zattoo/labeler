@@ -35,5 +35,3 @@ jobs:
               changed_files: ${{steps.changed-files.outputs.all}}
               filename: '.labels'
 ````
-
-{"mode":"full","isActive":false}

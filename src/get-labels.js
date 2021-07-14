@@ -33,6 +33,7 @@ const getLabelsFromFiles = async (labelFiles) => {
             const fileLabels = fileData.split('\n');
             labels.push(...fileLabels);
         } catch (e) {
+            console.error(`file: ${file} errored while reading data: ${e}`);
             return Promise.resolve();
         }
     })]);
