@@ -4,6 +4,12 @@ inputs:
   label_filename:
     description: 'Filename which contain label metadata to look for'
     required: true
+  owners_filename:
+    description: 'Filename which contain owners metadata to look for'
+    required: true
+  keepers_filename:
+    description: 'Filename which contain keepers metadata to look for'
+    required: true
   token:
     description: 'GitHub token'
     required: true
