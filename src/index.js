@@ -85,13 +85,15 @@ const utils = require('./get-meta-info');
                         edges {
                             node {
                                 __typename
-                            ... on ReviewRequestedEvent {
+                                 ... on ReviewRequestedEvent {
                                     createdAt
                                     actor {
                                         login
                                     }
                                     requestedReviewer {
-                                        login
+                                        ... on User {
+                                            login
+                                        }
                                     }
                                 }
                             }

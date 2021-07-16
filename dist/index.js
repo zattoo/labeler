@@ -9387,13 +9387,15 @@ const utils = __nccwpck_require__(6742);
                         edges {
                             node {
                                 __typename
-                            ... on ReviewRequestedEvent {
+                                 ... on ReviewRequestedEvent {
                                     createdAt
                                     actor {
                                         login
                                     }
                                     requestedReviewer {
-                                        login
+                                        ... on User {
+                                            login
+                                        }
                                     }
                                 }
                             }
