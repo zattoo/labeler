@@ -9364,6 +9364,10 @@ const utils = __nccwpck_require__(6742);
         const {repo} = context;
         const {pull_request} = context.payload;
 
+        core.info(Object.keys(pull_request));
+        const createdBy = pull_request.user.login;
+        core.info(createdBy);
+
         /** @type {string[]} */
         let reviewersOnPr = [];
 
