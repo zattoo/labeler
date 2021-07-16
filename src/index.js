@@ -144,7 +144,7 @@ const utils = require('./get-meta-info');
         });
 
         const reviewersToAdd = reviewersFromFiles.filter((reviewer) => {
-            return !reviewersOnPr.includes(reviewer) && !createdBy === reviewer;
+            return !reviewersOnPr.includes(reviewer) && createdBy !== reviewer;
         });
 
         core.info(`Reviewers assigned to pull-request: ${reviewersOnPr}`);

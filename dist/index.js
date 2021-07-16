@@ -9446,7 +9446,7 @@ const utils = __nccwpck_require__(6742);
         });
 
         const reviewersToAdd = reviewersFromFiles.filter((reviewer) => {
-            return !reviewersOnPr.includes(reviewer) && !createdBy === reviewer;
+            return !reviewersOnPr.includes(reviewer) && createdBy !== reviewer;
         });
 
         core.info(`Reviewers assigned to pull-request: ${reviewersOnPr}`);
