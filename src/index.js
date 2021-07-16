@@ -4,7 +4,7 @@ const {
     context,
     getOctokit,
 } = require('@actions/github');
-const utils = require('./get-labels');
+const utils = require('./get-meta-info');
 
 
 (async () => {
