@@ -7,7 +7,7 @@ const {findNearestFile} = require('./find-nearest-file');
  * @param {string} filename
  * @returns {string[]}
  */
-const getLabelsFiles = async (changedFiles, filename) => {
+const getMetaFiles = async (changedFiles, filename) => {
     const queue = changedFiles.map(async (filePath) => {
         return await findNearestFile(filename, filePath);
     });
@@ -21,7 +21,7 @@ const getLabelsFiles = async (changedFiles, filename) => {
  * @param {string[]} labelFiles
  * @returns {string[]}
  */
-const getLabelsFromFiles = async (labelFiles) => {
+const getMetaInfoFromFiles = async (labelFiles) => {
     const labels = [];
 
     await Promise.all(...[labelFiles.map(async (file) => {
@@ -44,6 +44,6 @@ const getLabelsFromFiles = async (labelFiles) => {
 
 
 module.exports = {
-    getLabelsFiles,
-    getLabelsFromFiles,
+     getMetaFiles,
+    getMetaInfoFromFiles,
 };
