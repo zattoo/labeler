@@ -9444,7 +9444,7 @@ const utils = __nccwpck_require__(6742);
         });
 
         const reviewersToAdd = reviewersFromFiles.filter((label) => {
-            return !requestedReviewers.includes(label);
+            return !reviewersOnPr.includes(label);
         });
 
         core.info(`Reviewers assigned to pull-request: ${requestedReviewers}`);
@@ -9597,12 +9597,16 @@ const utils = __nccwpck_require__(6742);
         keepersFilename,
         changedFiles,
     }) => {
+        core.info('-----------------------------------');
+
         await autoLabel({
             octokit,
             user,
             labelFilename,
             changedFiles,
         });
+
+        core.info('-----------------------------------');
 
         await assignReviewers({
             octokit,

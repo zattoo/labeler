@@ -142,7 +142,7 @@ const utils = require('./get-meta-info');
         });
 
         const reviewersToAdd = reviewersFromFiles.filter((label) => {
-            return !requestedReviewers.includes(label);
+            return !reviewersOnPr.includes(label);
         });
 
         core.info(`Reviewers assigned to pull-request: ${requestedReviewers}`);
@@ -295,12 +295,16 @@ const utils = require('./get-meta-info');
         keepersFilename,
         changedFiles,
     }) => {
+        core.info('-----------------------------------');
+
         await autoLabel({
             octokit,
             user,
             labelFilename,
             changedFiles,
         });
+
+        core.info('-----------------------------------');
 
         await assignReviewers({
             octokit,
