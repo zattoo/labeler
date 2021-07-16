@@ -145,7 +145,7 @@ const utils = require('./get-meta-info');
             return !reviewersOnPr.includes(label);
         });
 
-        core.info(`Reviewers assigned to pull-request: ${requestedReviewers}`);
+        core.info(`Reviewers assigned to pull-request: ${reviewersOnPr}`);
         core.info(`Reviewers which were assigned by the action: ${assignedByTheAction}`);
         core.info(`Reviewers to remove: ${reviewersToRemove}`);
         core.info(`Reviewers to add: ${reviewersToAdd}`);
@@ -163,6 +163,7 @@ const utils = require('./get-meta-info');
         if (reviewersToAdd.length > 0) {
             queue.push(octokit.rest.pulls.requestReviewers({
                 ...repo,
+                pull_number: pull_request.number,
                 reviewers: reviewersToAdd,
             }));
         }
