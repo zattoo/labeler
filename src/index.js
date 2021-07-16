@@ -62,9 +62,7 @@ const utils = require('./get-meta-info');
         const {repo} = context;
         const {pull_request} = context.payload;
 
-        core.info(Object.keys(pull_request));
         const createdBy = pull_request.user.login;
-        core.info(createdBy);
 
         /** @type {string[]} */
         let reviewersOnPr = [];
@@ -141,12 +139,12 @@ const utils = require('./get-meta-info');
         }
 
 
-        const reviewersToRemove = assignedByTheAction.filter((label) => {
-            return !reviewersFromFiles.includes(label);
+        const reviewersToRemove = assignedByTheAction.filter((reviewer) => {
+            return !reviewersFromFiles.includes(reviewer);
         });
 
-        const reviewersToAdd = reviewersFromFiles.filter((label) => {
-            return !reviewersOnPr.includes(label);
+        const reviewersToAdd = reviewersFromFiles.filter((reviewer) => {
+            return !reviewersOnPr.includes(reviewer) && !createdBy === reviewer;
         });
 
         core.info(`Reviewers assigned to pull-request: ${reviewersOnPr}`);
