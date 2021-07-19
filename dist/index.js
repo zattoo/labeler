@@ -9273,7 +9273,7 @@ const reduceFilesToLevel = (changedFiles, level) => {
         }
 
         case reviewersLevels.PROJECT: {
-            return changedFiles.map((path) => {
+            return [new Set(...changedFiles.map((path) => {
                 const splitPath = path.split('/');
                 const projectsIndex = splitPath.indexOf('projects');
 
@@ -9282,7 +9282,7 @@ const reduceFilesToLevel = (changedFiles, level) => {
                 }
 
                 return `${splitPath[projectsIndex]}/${splitPath[projectsIndex + 1]}`;
-            });
+            }))];
         }
 
         case reviewersLevels.OWNER:
@@ -9476,6 +9476,23 @@ const MESSAGE_PREFIX = '#Assign';
 
         // get reviewers
         const reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename);
+
+        if (reviewersFiles.length <= 0) {
+            await octokit.issues.createComment({
+                ...repo,
+                issue_number: pullRequest.number,
+                body: `No ${ownersFilename} filenames were found 😟`,
+            });
+
+            return;
+        }
+
+        await octokit.issues.createComment({
+            ...repo,
+            issue_number: pullRequest.number,
+            body: `Found ${reviewersFiles.length} filenames matching: ${ownersFilename} pattern!\`${reviewersFiles.join('/n')}\``,
+        });
+
         const reviewersFromFiles = await utils.getMetaInfoFromFiles(reviewersFiles);
 
         const reviewersToRemove = assignedByTheAction.filter((reviewer) => {
