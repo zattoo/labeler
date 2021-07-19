@@ -128,6 +128,23 @@ const MESSAGE_PREFIX = '#Assign';
 
         // get reviewers
         const reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename);
+
+        if (reviewersFiles.length <= 0) {
+            await octokit.issues.createComment({
+                ...repo,
+                issue_number: pullRequest.number,
+                body: `No ${ownersFilename} filenames were found 😟`,
+            });
+
+            return;
+        }
+
+        await octokit.issues.createComment({
+            ...repo,
+            issue_number: pullRequest.number,
+            body: `Found ${reviewersFiles.length} filenames matching: ${ownersFilename} pattern!\`${reviewersFiles.join('/n')}\``,
+        });
+
         const reviewersFromFiles = await utils.getMetaInfoFromFiles(reviewersFiles);
 
         const reviewersToRemove = assignedByTheAction.filter((reviewer) => {

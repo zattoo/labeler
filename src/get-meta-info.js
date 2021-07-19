@@ -27,7 +27,7 @@ const reduceFilesToLevel = (changedFiles, level) => {
         }
 
         case reviewersLevels.PROJECT: {
-            return changedFiles.map((path) => {
+            return [new Set(...changedFiles.map((path) => {
                 const splitPath = path.split('/');
                 const projectsIndex = splitPath.indexOf('projects');
 
@@ -36,7 +36,7 @@ const reduceFilesToLevel = (changedFiles, level) => {
                 }
 
                 return `${splitPath[projectsIndex]}/${splitPath[projectsIndex + 1]}`;
-            });
+            }))];
         }
 
         case reviewersLevels.OWNER:
