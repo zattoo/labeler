@@ -6,7 +6,3 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## 1.0.0 - 14.07.2021
 
 Initial implementation
-
-```text
-hello
-```
