@@ -9478,7 +9478,7 @@ const MESSAGE_PREFIX = '#Assign';
         const reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename);
 
         if (reviewersFiles.length <= 0) {
-            await octokit.issues.createComment({
+            await octokit.rest.issues.createComment({
                 ...repo,
                 issue_number: pullRequest.number,
                 body: `No ${ownersFilename} filenames were found 😟`,
@@ -9487,7 +9487,7 @@ const MESSAGE_PREFIX = '#Assign';
             return;
         }
 
-        await octokit.issues.createComment({
+        await octokit.rest.issues.createComment({
             ...repo,
             issue_number: pullRequest.number,
             body: `Found ${reviewersFiles.length} filenames matching: ${ownersFilename} pattern!\`${reviewersFiles.join('/n')}\``,
