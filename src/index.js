@@ -315,7 +315,7 @@ const MESSAGE_PREFIX = '#Assign';
     const labelFilename = core.getInput('label_filename', {required: true});
     const ownersFilename = core.getInput('owners_filename', {required: true});
     /** @type {string[]} */
-    const ignoreFiles = core.getInput('ignore_files', {required: true});
+    const ignoreFiles = core.getInput('ignore_files', {required: true}).split(' ');
 
     const octokit = getOctokit(github_token);
     const {
