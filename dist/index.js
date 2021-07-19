@@ -9487,13 +9487,6 @@ const MESSAGE_PREFIX = '#Assign';
             return;
         }
 
-        const filesText = reviewersFiles.map((file) => `* \`${file}\``).join('\n');
-        await octokit.rest.issues.createComment({
-            ...repo,
-            issue_number: pullRequest.number,
-            body: `Found ${reviewersFiles.length} filenames matching: \`${ownersFilename}\` pattern!\n${filesText}`,
-        });
-
         const reviewersFromFiles = await utils.getMetaInfoFromFiles(reviewersFiles);
 
         const reviewersToRemove = assignedByTheAction.filter((reviewer) => {
@@ -9524,6 +9517,13 @@ const MESSAGE_PREFIX = '#Assign';
                 ...repo,
                 pull_number: pullRequest.number,
                 reviewers: reviewersToAdd,
+            }));
+
+            const filesText = reviewersFiles.map((file) => `* \`${file}\``).join('\n');
+            queue.push(octokit.rest.issues.createComment({
+                ...repo,
+                issue_number: pullRequest.number,
+                body: `Found ${reviewersFiles.length} filenames matching: \`${ownersFilename}\` pattern!\n${filesText}`,
             }));
         }
 
