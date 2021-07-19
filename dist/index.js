@@ -9248,6 +9248,50 @@ const fse = __nccwpck_require__(5630);
 
 const {findNearestFile} = __nccwpck_require__(9772);
 
+const reviewersLevels = __nccwpck_require__(5362);
+
+/**
+ * @param {string[]} changedFiles
+ * @param {string[]} ignoreFiles
+ * @returns {string[]}
+ */
+const filterChangedFiles = (changedFiles, ignoreFiles) => {
+    return changedFiles.filter((file) => {
+        return !ignoreFiles.includes(file.split('/').pop());
+    });
+};
+
+/**
+ * @param {string[]} changedFiles
+ * @param {string} level
+ * @returns {string[]}
+ */
+const reduceFilesToLevel = (changedFiles, level) => {
+    switch (level) {
+        case reviewersLevels.REPO: {
+            return ['/'];
+        }
+
+        case reviewersLevels.PROJECT: {
+            return changedFiles.map((path) => {
+                const splitPath = path.split('/');
+                const projectsIndex = splitPath.indexOf('projects');
+
+                if (projectsIndex === -1) {
+                    return path;
+                }
+
+                return `${splitPath[projectsIndex]}/${splitPath[projectsIndex + 1]}`;
+            });
+        }
+
+        case reviewersLevels.OWNER:
+        default: {
+            return changedFiles;
+        }
+    }
+};
+
 /**
  * @param {string[]} changedFiles
  * @param {string} filename
@@ -9292,6 +9336,8 @@ const getMetaInfoFromFiles = async (labelFiles) => {
 module.exports = {
      getMetaFiles,
     getMetaInfoFromFiles,
+    reduceFilesToLevel,
+    filterChangedFiles,
 };
 
 
@@ -9307,6 +9353,9 @@ const {
     getOctokit,
 } = __nccwpck_require__(5438);
 const utils = __nccwpck_require__(6742);
+const reviewersLevels = __nccwpck_require__(5362);
+
+const MESSAGE_PREFIX = '#Assign';
 
 
 (async () => {
@@ -9358,20 +9407,19 @@ const utils = __nccwpck_require__(6742);
         octokit,
         user,
         ownersFilename,
-        keepersFilename,
         changedFiles,
+        pullRequest,
     }) => {
         const {repo} = context;
-        const {pull_request} = context.payload;
 
-        const createdBy = pull_request.user.login;
+        const createdBy = pullRequest.user.login;
 
         /** @type {string[]} */
         let reviewersOnPr = [];
 
         const requestedReviewers = (await octokit.rest.pulls.listRequestedReviewers({
             ...repo,
-            pull_number: pull_request.number,
+            pull_number: pullRequest.number,
         })).data;
 
         if (requestedReviewers.users) {
@@ -9383,7 +9431,7 @@ const utils = __nccwpck_require__(6742);
         // get the reviewers request history on the pull-request
         const query = await octokit.graphql(`{
             repository(owner: "${repo.owner}", name: "${repo.repo}") {
-                pullRequest(number: ${pull_request.number}) {
+                pullRequest(number: ${pullRequest.number}) {
                     timelineItems(last: 100, itemTypes: [REVIEW_REQUESTED_EVENT]) {
                         totalCount
                         edges {
@@ -9428,18 +9476,7 @@ const utils = __nccwpck_require__(6742);
 
         // get reviewers
         const reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename);
-        let reviewersFromFiles = await utils.getMetaInfoFromFiles(reviewersFiles);
-
-        core.info(`reviewersFromFiles length: ${reviewersFromFiles.length}`);
-
-        if (reviewersFromFiles.length === 0) {
-
-            core.info('no reviewers from files calling the platform keepers');
-
-            const keepersFiles = await utils.getMetaFiles(changedFiles, keepersFilename);
-            reviewersFromFiles = await utils.getMetaInfoFromFiles(keepersFiles);
-        }
-
+        const reviewersFromFiles = await utils.getMetaInfoFromFiles(reviewersFiles);
 
         const reviewersToRemove = assignedByTheAction.filter((reviewer) => {
             return !reviewersFromFiles.includes(reviewer);
@@ -9459,7 +9496,7 @@ const utils = __nccwpck_require__(6742);
         if (reviewersToRemove.length > 0) {
             queue.push(octokit.rest.pulls.removeRequestedReviewers({
                 ...repo,
-                pull_number: pull_request.number,
+                pull_number: pullRequest.number,
                 reviewers: reviewersToRemove,
             }))
         }
@@ -9467,7 +9504,7 @@ const utils = __nccwpck_require__(6742);
         if (reviewersToAdd.length > 0) {
             queue.push(octokit.rest.pulls.requestReviewers({
                 ...repo,
-                pull_number: pull_request.number,
+                pull_number: pullRequest.number,
                 reviewers: reviewersToAdd,
             }));
         }
@@ -9486,14 +9523,14 @@ const utils = __nccwpck_require__(6742);
         user,
         labelFilename,
         changedFiles,
+        pullRequest,
     }) => {
         const {repo} = context;
-        const {pull_request} = context.payload;
 
         // get the current labels on the pull-request
         const labelsOnPr = (await octokit.rest.issues.listLabelsOnIssue({
             ...repo,
-            issue_number: pull_request.number,
+            issue_number: pullRequest.number,
         })).data.map((label) => {
             if (label) {
                 return label.name;
@@ -9503,7 +9540,7 @@ const utils = __nccwpck_require__(6742);
         // get the labels history on the pull-request
         const query = await octokit.graphql(`{
             repository(owner: "${repo.owner}", name: "${repo.repo}") {
-                pullRequest(number: ${pull_request.number}) {
+                pullRequest(number: ${pullRequest.number}) {
                     timelineItems(last: 100, itemTypes: [LABELED_EVENT]) {
                         totalCount
                         edges {
@@ -9568,7 +9605,7 @@ const utils = __nccwpck_require__(6742);
         if (labelsToAdd.length > 0) {
             queue.push(octokit.rest.issues.addLabels({
                 ...repo,
-                issue_number: pull_request.number,
+                issue_number: pullRequest.number,
                 labels: labelsToAdd,
             }));
         }
@@ -9578,7 +9615,7 @@ const utils = __nccwpck_require__(6742);
             queue.push(...labelsToRemove.map(async (label) => {
                 return await octokit.rest.issues.removeLabel({
                     ...repo,
-                    issue_number: pull_request.number,
+                    issue_number: pullRequest.number,
                     name: label,
                 });
             }));
@@ -9597,8 +9634,9 @@ const utils = __nccwpck_require__(6742);
         user,
         labelFilename,
         ownersFilename,
-        keepersFilename,
+        ignoreFiles,
         changedFiles,
+        pullRequest,
     }) => {
         core.info('-----------------------------------');
 
@@ -9607,6 +9645,7 @@ const utils = __nccwpck_require__(6742);
             user,
             labelFilename,
             changedFiles,
+            pullRequest,
         });
 
         core.info('-----------------------------------');
@@ -9615,15 +9654,17 @@ const utils = __nccwpck_require__(6742);
             octokit,
             user,
             ownersFilename,
-            keepersFilename,
-            changedFiles,
+            changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
+            pullRequest,
         });
     };
 
     const github_token = core.getInput('token', {required: true});
     const labelFilename = core.getInput('label_filename', {required: true});
     const ownersFilename = core.getInput('owners_filename', {required: true});
-    const keepersFilename = core.getInput('keepers_filename', {required: true});
+    /** @type {string[]} */
+    const ignoreFiles = core.getInput('ignore_files', {required: true});
+
     const octokit = getOctokit(github_token);
     const {
         pull_request,
@@ -9639,7 +9680,6 @@ const utils = __nccwpck_require__(6742);
         getChangedFiles(octokit, pull_request.number),
         getUser(octokit),
     ]);
-
     core.info(`Token user: ${user}`);
 
     if (pull_request) {
@@ -9648,9 +9688,38 @@ const utils = __nccwpck_require__(6742);
             user,
             labelFilename,
             ownersFilename,
-            keepersFilename,
+            ignoreFiles,
             changedFiles,
+            pullRequest: pull_request,
         });
+    }
+
+    if (comment) {
+        const message = comment.body;
+        const level = Object.values(reviewersLevels).find((reviewerLevel) => message.includes(reviewerLevel));
+
+        if (
+            message.includes(MESSAGE_PREFIX)
+            && Boolean(level)
+        ) {
+            const {number} = context.payload.issue;
+            const {repo} = context;
+
+            const pullRequest = await octokit.rest.pulls.get({
+                ...repo,
+                pull_number: number,
+            });
+
+            core.info(`pullRequestKeys ${Object.keys(pull_request)}`);
+
+            await assignReviewers({
+                octokit,
+                user,
+                ownersFilename,
+                changedFiles: utils.reduceFilesToLevel(utils.filterChangedFiles(changedFiles, ignoreFiles), level),
+                pullRequest,
+            });
+        }
     }
 })().catch((error) => {
     core.setFailed(error);
@@ -9664,7 +9733,7 @@ const utils = __nccwpck_require__(6742);
  * @prop {string} user
  * @prop {string} labelFilename
  * @prop {string} ownersFilename
- * @prop {string} keepersFilename
+ * @prop {string[]} ignoreFiles
  */
 
 /**
@@ -9707,6 +9776,22 @@ const utils = __nccwpck_require__(6742);
  * @typedef {Object} Label
  * @prop {string} name
  */
+
+
+/***/ }),
+
+/***/ 5362:
+/***/ ((module) => {
+
+const OWNER = 'owner';
+const PROJECT = 'project';
+const REPO = 'repo';
+
+module.exports = {
+    OWNER,
+    PROJECT,
+    REPO
+};
 
 
 /***/ }),

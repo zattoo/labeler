@@ -7,9 +7,9 @@ inputs:
   owners_filename:
     description: 'Filename which contain owners metadata to look for'
     required: true
-  keepers_filename:
-    description: 'Filename which contain keepers metadata to look for'
-    required: true
+  ignore_files:
+    description: 'Files to be ignored when assigning reviewers'
+    required: false
   token:
     description: 'GitHub token'
     required: true
