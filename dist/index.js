@@ -9487,7 +9487,7 @@ const MESSAGE_PREFIX = '#Assign';
             return;
         }
 
-        const filesText = reviewersFiles.map((file) => `* ${file}`).join('\n');
+        const filesText = reviewersFiles.map((file) => `* \`${file}\``).join('\n');
         await octokit.rest.issues.createComment({
             ...repo,
             issue_number: pullRequest.number,
