@@ -9491,7 +9491,7 @@ const MESSAGE_PREFIX = '#Assign';
         await octokit.rest.issues.createComment({
             ...repo,
             issue_number: pullRequest.number,
-            body: `Found ${reviewersFiles.length} filenames matching: \`${ownersFilename}\` pattern!\n\`${filesText}\``,
+            body: `Found ${reviewersFiles.length} filenames matching: \`${ownersFilename}\` pattern!\n\`${reviewersFiles}\``,
         });
 
         const reviewersFromFiles = await utils.getMetaInfoFromFiles(reviewersFiles);
