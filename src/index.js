@@ -133,7 +133,7 @@ const MESSAGE_PREFIX = '#Assign';
             await octokit.rest.issues.createComment({
                 ...repo,
                 issue_number: pullRequest.number,
-                body: `No ${ownersFilename} filenames were found 😟`,
+                body: `No \`${ownersFilename}\` filenames were found 😟`,
             });
 
             return;
@@ -142,7 +142,7 @@ const MESSAGE_PREFIX = '#Assign';
         await octokit.rest.issues.createComment({
             ...repo,
             issue_number: pullRequest.number,
-            body: `Found ${reviewersFiles.length} filenames matching: ${ownersFilename} pattern!\`${reviewersFiles.join('/n')}\``,
+            body: `Found ${reviewersFiles.length} filenames matching: \`${ownersFilename}\` pattern!\n\`${reviewersFiles.join(' /n ')}\``,
         });
 
         const reviewersFromFiles = await utils.getMetaInfoFromFiles(reviewersFiles);
