@@ -16043,6 +16043,7 @@ const PATH = '.';
 
     const {
         pull_request,
+        issue,
         comment,
     } = context.payload;
 
@@ -16051,8 +16052,10 @@ const PATH = '.';
         core.error('Only pull requests events or comments can trigger this action');
     }
 
+    const pullRequest = pull_request || issue;
+
     const [changedFiles, user, previousArtifact] = await Promise.all([
-        getChangedFiles(octokit, pull_request.number),
+        getChangedFiles(octokit, pullRequest.number),
         getUser(octokit),
         getArtifact(octokit),
     ]);
@@ -16094,17 +16097,14 @@ const PATH = '.';
             message.includes(MESSAGE_PREFIX)
             && Boolean(level)
         ) {
-            core.info('collectoing issue');
-            const {issue} = context.payload;
-
-            core.info(`pullRequestKeys ${Object.keys(issue)}`);
+            core.info(`pullRequestKeys ${Object.keys(pullRequest)}`);
 
             await assignReviewers({
                 octokit,
                 user,
                 ownersFilename,
                 changedFiles: utils.reduceFilesToLevel(utils.filterChangedFiles(changedFiles, ignoreFiles), level),
-                pullRequest: issue,
+                pullRequest: pullRequest,
             });
         }
     }
