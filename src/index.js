@@ -71,7 +71,7 @@ const PATH = '/tmp';
 
         const desiredArtifact = artifactsList.artifacts.find((artifactFile) => artifactFile.name === ARTIFACT_NAME);
 
-        if (!Boolean(desiredArtifact)) {
+        if (!desiredArtifact) {
             core.info(`There are no artifacts with the name: ${ARTIFACT_NAME}`);
             core.info(`Other artifacts on the run are ${artifactsList.artifacts.map((artifactFile) => artifactFile.name)}`);
             return null;
@@ -100,7 +100,7 @@ const PATH = '/tmp';
         core.info('wrote file');
         const artifactClient = artifact.create();
 
-        const uploadResponse = await artifactClient.uploadArtifact(ARTIFACT_NAME, ARTIFACT_NAME, PATH, {continueOnError: false});
+        const uploadResponse = await artifactClient.uploadArtifact(ARTIFACT_NAME, [ARTIFACT_NAME], PATH, {continueOnError: false});
 
         core.info(JSON.stringify(uploadResponse));
     };
