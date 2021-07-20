@@ -14,7 +14,7 @@ const reviewersLevels = require('./reveiwers-levels');
 
 const MESSAGE_PREFIX = '#Assign';
 const ARTIFACT_NAME = 'project-recognition';
-const PATH = path.join(process.env.GITHUB_WORKSPACE, '.tmp');
+const PATH = '.tmp';
 
 
 (async () => {
