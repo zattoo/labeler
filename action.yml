@@ -13,6 +13,9 @@ inputs:
   token:
     description: 'GitHub token'
     required: true
+  workflow_name:
+    description: : 'name of the workflow'
+    required: true
 runs:
   using: 'node12'
   main: 'dist/index.js'

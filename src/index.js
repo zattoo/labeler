@@ -20,9 +20,10 @@ const PATH = '.';
 (async () => {
     /**
      * @param {InstanceType<typeof GitHub>} octokit
+     * @param {string} workflowName
      * @returns {Promise<ArtifactData>}
      */
-    const getArtifact = async (octokit) => {
+    const getArtifact = async (octokit, workflowName) => {
         const {repo} = context;
 
         // https://docs.github.com/en/actions/reference/environment-variables
@@ -35,7 +36,7 @@ const PATH = '.';
         try {
             workflowRunsList = await octokit.rest.actions.listWorkflowRuns({
                 ...repo,
-                workflow_id,
+                workflow_id: workflowName,
                 branch,
                 status: 'success',
             });
@@ -447,6 +448,7 @@ const PATH = '.';
     const github_token = core.getInput('token', {required: true});
     const labelFilename = core.getInput('label_filename', {required: true});
     const ownersFilename = core.getInput('owners_filename', {required: true});
+    const workflowName = core.getInput('workflow_name', {required: true});
     /** @type {string[]} */
     const ignoreFiles = core.getInput('ignore_files', {required: true}).split(' ');
     const octokit = getOctokit(github_token);
@@ -454,8 +456,6 @@ const PATH = '.';
 
     core.info('---- DEBUG ---- ');
     core.info(JSON.stringify(process.env));
-
-    core.info(JSON.stringify(context));
     core.info('---- END DEBUG ---- ');
 
     const {
@@ -471,7 +471,7 @@ const PATH = '.';
     const [changedFiles, user, previousArtifact] = await Promise.all([
         getChangedFiles(octokit, pull_request.number),
         getUser(octokit),
-        getArtifact(octokit),
+        getArtifact(octokit, workflowName),
     ]);
 
     core.info(`previous Artifact ${JSON.stringify(previousArtifact)}`);
