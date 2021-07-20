@@ -15590,7 +15590,7 @@ const reviewersLevels = __nccwpck_require__(5362);
 
 const MESSAGE_PREFIX = '#Assign';
 const ARTIFACT_NAME = 'project-recognition';
-const PATH = '/artifact-tmp';
+const PATH = '.';
 
 
 (async () => {
