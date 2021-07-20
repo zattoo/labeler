@@ -15604,7 +15604,7 @@ const PATH = path.join(process.env.GITHUB_WORKSPACE, '.tmp');
         // https://docs.github.com/en/actions/reference/environment-variables
         const workflow_id = process.env.GITHUB_WORKFLOW;
         // todo does it work for issues comment?
-        const branch = process.env.GITHUB_BASE_REF;
+        const branch = process.env.GITHUB_HEAD_REF;
 
         const workflowRunsList =  await octokit.paginate(
             octokit.rest.actions.listWorkflowRuns({
@@ -15619,6 +15619,9 @@ const PATH = path.join(process.env.GITHUB_WORKSPACE, '.tmp');
             core.info(`There are no workflow runs for workflow id: ${workflow_id} on the branch: ${branch}`);
             return null;
         }
+
+        core.info(`workflow runs list keys: ${Object.keys(workflowRunsList)}`);
+        core.info(`workflow runs list total count: ${workflowRunsList.total_count}`);
 
         const latestRun = workflowRunsList.workflow_runs.reduce((current, next) => {
            return new Date(current.created_at) > new Date(next.created_at) ? current : next;
@@ -15769,7 +15772,9 @@ const PATH = path.join(process.env.GITHUB_WORKSPACE, '.tmp');
         }`);
 
         /** @type {ReviewerInfo[]} */
-        const reviewersInfo = query.repository.pullRequest.timelineItems.edges;
+        const reviewersInfo = query.repository.pullRequest.timelineItems.edges || [];
+
+        core.info('now reviewers info');
 
         // reducing the query to labels only
         const assignedByTheAction = reviewersInfo.reduce((acc, reviewerEvent) => {
@@ -15896,7 +15901,9 @@ const PATH = path.join(process.env.GITHUB_WORKSPACE, '.tmp');
         }`);
 
         /** @type {LabelInfo[]} */
-        const labelsInfo = query.repository.pullRequest.timelineItems.edges;
+        const labelsInfo = query.repository.pullRequest.timelineItems.edges || [];
+
+        core.info('now labeled by the action');
 
         // reducing the query to labels only
         const labeledByTheAction = labelsInfo.reduce((acc, labelInfo) => {
