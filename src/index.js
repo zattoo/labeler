@@ -56,8 +56,8 @@ const PATH = '.';
         core.info(`workflow runs: ${JSON.stringify(workflowRunsList)}`);
 
 
-        if (!workflowRunsList || workflowRunsList.total_count === 0) {
-            core.info(`There are no workflow runs for workflow id: ${workflow_id} on the branch: ${branch}`);
+        if (workflowRunsList.total_count === 0) {
+            core.info(`There are no successful workflow runs for workflow id: ${currentWorkflow.id} on the branch: ${branch}`);
             return null;
         }
 
