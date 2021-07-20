@@ -98,9 +98,10 @@ const PATH = '/tmp';
         core.info('writing file');
         await fse.writeJSON(`${PATH}/${ARTIFACT_NAME}.json`, artifactInfo);
         core.info('wrote file');
+
         const artifactClient = artifact.create();
 
-        const uploadResponse = await artifactClient.uploadArtifact(ARTIFACT_NAME, [ARTIFACT_NAME], PATH, {continueOnError: false});
+        const uploadResponse = await artifactClient.uploadArtifact(ARTIFACT_NAME, [`${ARTIFACT_NAME}.json`], PATH, {continueOnError: false});
 
         core.info(JSON.stringify(uploadResponse));
     };
