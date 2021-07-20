@@ -510,6 +510,7 @@ const PATH = '.';
     }
 
     if (comment) {
+        core.info('me here yeay');
         const message = comment.body;
         const level = Object.values(reviewersLevels).find((reviewerLevel) => message.includes(reviewerLevel));
 
@@ -517,22 +518,17 @@ const PATH = '.';
             message.includes(MESSAGE_PREFIX)
             && Boolean(level)
         ) {
-            const {number} = context.payload.issue;
-            const {repo} = context;
+            core.info('collectoing issue');
+            const {issue} = context.payload;
 
-            const pullRequest = await octokit.rest.pulls.get({
-                ...repo,
-                pull_number: number,
-            });
-
-            core.info(`pullRequestKeys ${Object.keys(pull_request)}`);
+            core.info(`pullRequestKeys ${Object.keys(issue)}`);
 
             await assignReviewers({
                 octokit,
                 user,
                 ownersFilename,
                 changedFiles: utils.reduceFilesToLevel(utils.filterChangedFiles(changedFiles, ignoreFiles), level),
-                pullRequest,
+                pullRequest: issue,
             });
         }
     }
