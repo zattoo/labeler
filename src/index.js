@@ -36,7 +36,7 @@ const PATH = '.';
             workflowRunsList = await octokit.rest.actions.listWorkflowRuns({
                 ...repo,
                 workflow_id,
-                branch,
+                // branch,
                 status: 'success',
             });
         } catch (e) {
