@@ -15596,26 +15596,32 @@ const PATH = '.';
 (async () => {
     /**
      * @param {InstanceType<typeof GitHub>} octokit
-     * @param {string} workflowName
      * @returns {Promise<ArtifactData>}
      */
-    const getArtifact = async (octokit, workflowName) => {
+    const getArtifact = async (octokit, ) => {
         const {repo} = context;
+
+        // https://docs.github.com/en/actions/reference/environment-variables
+        const workflowName = process.env.GITHUB_WORKFLOW;
         // todo does it work for issues comment?
         const branch = process.env.GITHUB_HEAD_REF;
 
-        core.info(JSON.stringify({
-            workflowName,
-            branch,
-        }));
+        const workflowsResponse = await octokit.rest.actions.listRepoWorkflows({
+            ...repo,
+            per_page: 100,
+        });
+
+        const currentWorkflow = workflowsResponse.workflows.find((workflow) => {
+            return workflow.name = workflowName;
+        });
 
         let workflowRunsList;
 
         try {
             workflowRunsList = await octokit.rest.actions.listWorkflowRuns({
                 ...repo,
-                workflow_id: 'project-recognition.yml',
-                // branch,
+                workflow_id: currentWorkflow.id,
+                branch,
                 status: 'success',
             });
         } catch (e) {
@@ -16026,7 +16032,6 @@ const PATH = '.';
     const github_token = core.getInput('token', {required: true});
     const labelFilename = core.getInput('label_filename', {required: true});
     const ownersFilename = core.getInput('owners_filename', {required: true});
-    const workflowName = core.getInput('workflow_name', {required: true});
     /** @type {string[]} */
     const ignoreFiles = core.getInput('ignore_files', {required: true}).split(' ');
     const octokit = getOctokit(github_token);
@@ -16049,7 +16054,7 @@ const PATH = '.';
     const [changedFiles, user, previousArtifact] = await Promise.all([
         getChangedFiles(octokit, pull_request.number),
         getUser(octokit),
-        getArtifact(octokit, workflowName),
+        getArtifact(octokit),
     ]);
 
     core.info(`previous Artifact ${JSON.stringify(previousArtifact)}`);

@@ -10,9 +10,6 @@ inputs:
   ignore_files:
     description: 'Files to be ignored when assigning reviewers'
     required: false
-  workflow_name:
-    description: 'name of the workflow'
-    required: true
   token:
     description: 'GitHub token'
     required: true
