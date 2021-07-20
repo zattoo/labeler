@@ -101,6 +101,9 @@ const PATH = '/tmp';
 
         const artifactClient = artifact.create();
 
+        const folderFiles = await fse.readdir(PATH);
+        core.info(`files list in ${PATH}: ${folderFiles}`);
+
         const uploadResponse = await artifactClient.uploadArtifact(ARTIFACT_NAME, [`${ARTIFACT_NAME}.json`], PATH, {continueOnError: false});
 
         core.info(JSON.stringify(uploadResponse));
