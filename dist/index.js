@@ -15614,7 +15614,7 @@ const PATH = '.';
         try {
             workflowRunsList = await octokit.rest.actions.listWorkflowRuns({
                 ...repo,
-                workflow_id: workflowName,
+                workflow_id: 'project-recognition.yml',
                 // branch,
                 status: 'success',
             });
