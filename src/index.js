@@ -39,7 +39,7 @@ const PATH = path.join(process.env.GITHUB_WORKSPACE, '.tmp');
             })
         );
 
-        core.info(`workflow runs: ${workflowRunsList}`);
+        core.info(`workflow runs: ${JSON.stringify(workflowRunsList)}`);
 
 
         if (!workflowRunsList || workflowRunsList.total_count === 0) {
