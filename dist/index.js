@@ -15606,12 +15606,19 @@ const PATH = path.join(process.env.GITHUB_WORKSPACE, '.tmp');
         // todo does it work for issues comment?
         const branch = process.env.GITHUB_HEAD_REF;
 
-        const workflowRunsList =  await octokit.rest.actions.listWorkflowRuns({
+        let workflowRunsList;
+
+        try {
+            workflowRunsList = await octokit.rest.actions.listWorkflowRuns({
                 ...repo,
                 workflow_id,
                 branch,
                 status: 'success',
             });
+        } catch (e) {
+            core.info('listWorkflowRuns not found')
+            return null;
+        }
 
         core.info(`workflow runs: ${JSON.stringify(workflowRunsList)}`);
 
