@@ -14,7 +14,7 @@ const reviewersLevels = require('./reveiwers-levels');
 
 const MESSAGE_PREFIX = '#Assign';
 const ARTIFACT_NAME = 'project-recognition';
-const PATH = '.tmp';
+const PATH = '/tmp';
 
 
 (async () => {
