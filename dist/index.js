@@ -15610,10 +15610,8 @@ const PATH = '.';
             ...repo,
             per_page: 100,
         });
-
-        core.info(JSON.stringify(workflowsResponse));
-
-        const currentWorkflow = workflowsResponse.workflows.find((workflow) => {
+        
+        const currentWorkflow = workflowsResponse.data.workflows.find((workflow) => {
             return workflow.name = workflowName;
         });
 
