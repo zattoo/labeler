@@ -472,6 +472,8 @@ const PATH = '.';
         getArtifact(octokit),
     ]);
 
+    core.info(`previous Artifact ${JSON.stringify(previousArtifact)}`);
+
     /** @type {ArtifactData} */
     let currentArtifact = {
         level: 0,
