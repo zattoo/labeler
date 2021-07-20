@@ -1,16 +1,97 @@
 const path = require('path');
+const fse = require('fs-extra');
+
 const core = require('@actions/core');
+const artifact = require('@actions/artifact');
 const {
     context,
     getOctokit,
 } = require('@actions/github');
+
 const utils = require('./get-meta-info');
+const {execWithCatch} = require('./utils');
 const reviewersLevels = require('./reveiwers-levels');
 
 const MESSAGE_PREFIX = '#Assign';
+const ARTIFACT_NAME = 'project-recognition';
+const PATH = path.join(process.env.GITHUB_WORKSPACE, '.tmp');
 
 
 (async () => {
+    /**
+     * @param {InstanceType<typeof GitHub>} octokit
+     * @returns {Promise<ArtifactData>}
+     */
+    const getArtifact = async (octokit) => {
+        const {repo} = context;
+
+        // https://docs.github.com/en/actions/reference/environment-variables
+        const workflow_id = process.env.GITHUB_WORKFLOW;
+        // todo does it work for issues comment?
+        const branch = process.env.GITHUB_BASE_REF;
+
+        const workflowRunsList =  await octokit.paginate(
+            octokit.rest.actions.listWorkflowRuns({
+                ...repo,
+                workflow_id,
+                branch,
+                status: 'success',
+            })
+        );
+
+        if (workflowRunsList.total_count === 0) {
+            core.info(`There are no workflow runs for workflow id: ${workflow_id} on the branch: ${branch}`);
+            return null;
+        }
+
+        const latestRun = workflowRunsList.workflow_runs.reduce((current, next) => {
+           return new Date(current.created_at) > new Date(next.created_at) ? current : next;
+        });
+
+        const artifactsList = await octokit.rest.actions.listWorkflowRunArtifacts({
+            ...repo,
+            run_id: latestRun.id,
+        });
+
+        if (artifactsList.total_count === 0) {
+            core.info(`There are no artifacts for run id: ${latestRun.id}`);
+            return null;
+        }
+
+        const desiredArtifact = artifactsList.artifacts.find((artifactFile) => artifactFile.name === ARTIFACT_NAME);
+
+        if (!Boolean(desiredArtifact)) {
+            core.info(`There are no artifacts with the name: ${ARTIFACT_NAME}`);
+            core.info(`Other artifacts on the run are ${artifactsList.artifacts.map((artifactFile) => artifactFile.name)}`);
+            return null;
+        }
+
+        await execWithCatch(`curl -L ${desiredArtifact.archive_download_url} -o ${ARTIFACT_NAME}.zip -s`);
+        await execWithCatch(`unzip -o -q ${ARTIFACT_NAME}.zip -d ${PATH}`);
+
+        const folderFiles = await fse.readdir(PATH);
+        core.info(`files list in ${PATH}: ${folderFiles}`);
+
+        const artifactData = await fse.readJSON(`${PATH}/${ARTIFACT_NAME}.json`);
+
+        core.info(`artifact data: ${artifactData}`);
+
+        return artifactData;
+    };
+
+    /**
+     * @param {ArtifactData} artifactInfo
+     * @returns {Promise<void>}
+     */
+    const uploadArtifact = async (artifactInfo) => {
+        await fse.writeJSON(`${PATH}/${ARTIFACT_NAME}.json`, artifactInfo);
+        const artifactClient = artifact.create();
+
+        const uploadResponse = await artifactClient.uploadArtifact(ARTIFACT_NAME, ARTIFACT_NAME, PATH, {continueOnError: false});
+
+        core.info(JSON.stringify(uploadResponse));
+    };
+
     /**
      * @param {InstanceType<typeof GitHub>} octokit
      * @param {number} pull_number
@@ -55,6 +136,10 @@ const MESSAGE_PREFIX = '#Assign';
         return user;
     };
 
+    /**
+     * @param {AssignReviewersData} data
+     * @returns {Promise<void>}
+     */
     const assignReviewers = async ({
         octokit,
         user,
@@ -182,11 +267,13 @@ const MESSAGE_PREFIX = '#Assign';
         if (queue.length > 0) {
             await Promise.all(queue);
         }
+
+        return reviewersToAdd;
     };
 
     /**
      * @param {AutoLabelData} data
-     * @returns {Promise<void>}
+     * @returns {Promise<string[]>}
      */
     const autoLabel = async ({
         octokit,
@@ -294,6 +381,8 @@ const MESSAGE_PREFIX = '#Assign';
         if (queue.length > 0) {
             await Promise.all(queue);
         }
+
+        return labelsToAdd;
     };
 
     /**
@@ -310,7 +399,7 @@ const MESSAGE_PREFIX = '#Assign';
     }) => {
         core.info('-----------------------------------');
 
-        await autoLabel({
+        const labels = await autoLabel({
             octokit,
             user,
             labelFilename,
@@ -320,13 +409,18 @@ const MESSAGE_PREFIX = '#Assign';
 
         core.info('-----------------------------------');
 
-        await assignReviewers({
+        const reviewers = await assignReviewers({
             octokit,
             user,
             ownersFilename,
             changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
             pullRequest,
         });
+
+        return {
+            labels,
+            reviewers,
+        }
     };
 
     const github_token = core.getInput('token', {required: true});
@@ -334,8 +428,13 @@ const MESSAGE_PREFIX = '#Assign';
     const ownersFilename = core.getInput('owners_filename', {required: true});
     /** @type {string[]} */
     const ignoreFiles = core.getInput('ignore_files', {required: true}).split(' ');
-
     const octokit = getOctokit(github_token);
+
+
+    core.info('---- DEBUG ---- ');
+    core.info(JSON.stringify(process.env));
+    core.info('---- END DEBUG ---- ');
+
     const {
         pull_request,
         comment,
@@ -346,14 +445,23 @@ const MESSAGE_PREFIX = '#Assign';
         core.error('Only pull requests events or comments can trigger this action');
     }
 
-    const [changedFiles, user] = await Promise.all([
+    const [changedFiles, user, previousArtifact] = await Promise.all([
         getChangedFiles(octokit, pull_request.number),
         getUser(octokit),
+        getArtifact(octokit),
     ]);
+
+    /** @type {ArtifactData} */
+    let currentArtifact = {
+        level: 0,
+        labels: [],
+        reviewers: [],
+    };
+
     core.info(`Token user: ${user}`);
 
     if (pull_request) {
-        await pullRequestHandler({
+        const handlerData = await pullRequestHandler({
             octokit,
             user,
             labelFilename,
@@ -362,6 +470,11 @@ const MESSAGE_PREFIX = '#Assign';
             changedFiles,
             pullRequest: pull_request,
         });
+
+        currentArtifact = {
+            ...currentArtifact,
+            ...handlerData
+        }
     }
 
     if (comment) {
@@ -391,6 +504,8 @@ const MESSAGE_PREFIX = '#Assign';
             });
         }
     }
+
+    await uploadArtifact(currentArtifact);
 })().catch((error) => {
     core.setFailed(error);
     process.exit(1);
@@ -404,12 +519,16 @@ const MESSAGE_PREFIX = '#Assign';
  * @prop {string} labelFilename
  * @prop {string} ownersFilename
  * @prop {string[]} ignoreFiles
+ * @prop {PullRequest} pullRequest
  */
 
 /**
- * @typedef {Omit<PullRequestHandlerData, 'ownersFilename' | 'keepersFilename'>} AutoLabelData
+ * @typedef {Omit<PullRequestHandlerData, 'ownersFilename' | 'ignoreFiles'>} AutoLabelData
  */
 
+/**
+ * @typedef {Omit<PullRequestHandlerData, 'ignoreFiles'>} AssignReviewersData
+ */
 
 /**
  * @typedef {Object} ReviewerInfo
@@ -445,4 +564,23 @@ const MESSAGE_PREFIX = '#Assign';
 /**
  * @typedef {Object} Label
  * @prop {string} name
+ */
+
+/**
+ * @typedef {Object} PullRequest
+ * @prop {number} number
+ * @prop {User} user
+ */
+
+/**
+ * @typedef {Object} User
+ * @prop {string} login
+ */
+
+/**
+ * @typedef {Object} ArtifactData
+ * @prop {string[]} labels
+ * @prop {string[]} reviewers
+ * @prop {Record<string, string[]>} [ownerFilesReviewersMap]
+ * @prop {number} level
  */
