@@ -462,7 +462,7 @@ const PATH = '.';
 
 
     core.info('---- DEBUG ---- ');
-    core.info(JSON.stringify(process.env));
+    core.info(JSON.stringify(context.payload));
     core.info('---- END DEBUG ---- ');
 
     const {
@@ -471,7 +471,7 @@ const PATH = '.';
     } = context.payload;
 
     // Works only on pull-requests or comments
-    if (!pull_request || comment) {
+    if (!pull_request || !comment) {
         core.error('Only pull requests events or comments can trigger this action');
     }
 
