@@ -30,14 +30,12 @@ const PATH = path.join(process.env.GITHUB_WORKSPACE, '.tmp');
         // todo does it work for issues comment?
         const branch = process.env.GITHUB_HEAD_REF;
 
-        const workflowRunsList =  await octokit.paginate(
-            octokit.rest.actions.listWorkflowRuns({
+        const workflowRunsList =  await octokit.rest.actions.listWorkflowRuns({
                 ...repo,
                 workflow_id,
                 branch,
                 status: 'success',
-            })
-        );
+            });
 
         core.info(`workflow runs: ${JSON.stringify(workflowRunsList)}`);
 
