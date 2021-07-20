@@ -15610,7 +15610,7 @@ const PATH = '.';
             ...repo,
             per_page: 100,
         });
-        
+
         const currentWorkflow = workflowsResponse.data.workflows.find((workflow) => {
             return workflow.name = workflowName;
         });
@@ -15618,12 +15618,12 @@ const PATH = '.';
         let workflowRunsList;
 
         try {
-            workflowRunsList = await octokit.rest.actions.listWorkflowRuns({
+            workflowRunsList = (await octokit.rest.actions.listWorkflowRuns({
                 ...repo,
                 workflow_id: currentWorkflow.id,
                 branch,
                 status: 'success',
-            });
+            })).data;
         } catch (e) {
             core.info('listWorkflowRuns not found')
             return null;
