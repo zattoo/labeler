@@ -478,13 +478,13 @@ const PATH = '.';
 
     const pullRequest = pull_request || issue;
 
-    const [changedFiles, user, previousArtifact] = await Promise.all([
+    const [changedFiles, user] = await Promise.all([
         getChangedFiles(octokit, pullRequest.number),
         getUser(octokit),
-        getArtifact(octokit),
+        // getArtifact(octokit),
     ]);
 
-    core.info(`previous Artifact ${JSON.stringify(previousArtifact)}`);
+    // core.info(`previous Artifact ${JSON.stringify(previousArtifact)}`);
 
     /** @type {ArtifactData} */
     let currentArtifact = {
