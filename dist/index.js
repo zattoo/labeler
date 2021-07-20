@@ -15644,10 +15644,10 @@ const PATH = '.';
            return new Date(current.created_at) > new Date(next.created_at) ? current : next;
         });
 
-        const artifactsList = await octokit.rest.actions.listWorkflowRunArtifacts({
+        const artifactsList = (await octokit.rest.actions.listWorkflowRunArtifacts({
             ...repo,
             run_id: latestRun.id,
-        });
+        }).data);
 
         if (artifactsList.total_count === 0) {
             core.info(`There are no artifacts for run id: ${latestRun.id}`);
