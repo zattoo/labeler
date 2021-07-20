@@ -25,11 +25,13 @@ const PATH = '.';
      */
     const getArtifact = async (octokit, workflowName) => {
         const {repo} = context;
-
-        // https://docs.github.com/en/actions/reference/environment-variables
-        const workflow_id = process.env.GITHUB_WORKFLOW;
         // todo does it work for issues comment?
         const branch = process.env.GITHUB_HEAD_REF;
+
+        core.info(JSON.stringify({
+            workflowName,
+            branch,
+        }));
 
         let workflowRunsList;
 
@@ -37,7 +39,7 @@ const PATH = '.';
             workflowRunsList = await octokit.rest.actions.listWorkflowRuns({
                 ...repo,
                 workflow_id: workflowName,
-                branch,
+                // branch,
                 status: 'success',
             });
         } catch (e) {
