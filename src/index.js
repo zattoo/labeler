@@ -95,7 +95,9 @@ const PATH = path.join(process.env.GITHUB_WORKSPACE, '.tmp');
      * @returns {Promise<void>}
      */
     const uploadArtifact = async (artifactInfo) => {
+        core.info('writing file');
         await fse.writeJSON(`${PATH}/${ARTIFACT_NAME}.json`, artifactInfo);
+        core.info('wrote file');
         const artifactClient = artifact.create();
 
         const uploadResponse = await artifactClient.uploadArtifact(ARTIFACT_NAME, ARTIFACT_NAME, PATH, {continueOnError: false});
