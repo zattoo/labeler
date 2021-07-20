@@ -39,7 +39,10 @@ const PATH = path.join(process.env.GITHUB_WORKSPACE, '.tmp');
             })
         );
 
-        if (workflowRunsList.total_count === 0) {
+        core.info(`workflow runs: ${workflowRunsList}`);
+
+
+        if (!workflowRunsList || workflowRunsList.total_count === 0) {
             core.info(`There are no workflow runs for workflow id: ${workflow_id} on the branch: ${branch}`);
             return null;
         }
