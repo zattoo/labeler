@@ -28,9 +28,11 @@ const findFile = async (filename, directory) => {
     }
 
     const file = path.join(directory, filename);
+    console.log(file);
 
     try {
         const fileExists = await fse.pathExists(file);
+        console.log(`${file}: ${fileExists}`);
 
         if (fileExists) {
             return file;
@@ -47,7 +49,7 @@ const findFile = async (filename, directory) => {
  * @param {string} filename
  * @param {string} [root]
  */
-const findNearestFile = async (filename, root= process.cwd()) => {
+const findNearestFile = async (filename, root = process.cwd()) => {
     if (!filename) {
         throw new Error('filename is required');
     }

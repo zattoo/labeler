@@ -2,8 +2,8 @@ const {getMetaFiles, getMetaInfoFromFiles} = require('../src/get-meta-info');
 
 describe(getMetaFiles.name, () => {
     it('gets label files', async () => {
-        const changedFiles = ['test/projects/app/src/features/example.js'];
-        expect(await getMetaFiles(changedFiles, '.labels')).toEqual(['test/projects/app/.labels']);
+        const changedFiles = ['test/mocks/'];
+        expect(await getMetaFiles(changedFiles, '.owners')).toEqual(['/.owners']);
     });
 
     it('gets label files for multiple files', async () => {

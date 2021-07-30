@@ -52,6 +52,7 @@ const reduceFilesToLevel = (changedFiles, level) => {
  * @returns {string[]}
  */
 const getMetaFiles = async (changedFiles, filename) => {
+    console.log(changedFiles);
     const queue = changedFiles.map(async (filePath) => {
         return await findNearestFile(filename, filePath);
     });

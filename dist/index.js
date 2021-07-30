@@ -15433,9 +15433,11 @@ const findFile = async (filename, directory) => {
     }
 
     const file = path.join(directory, filename);
+    console.log(file);
 
     try {
         const fileExists = await fse.pathExists(file);
+        console.log(`${file}: ${fileExists}`);
 
         if (fileExists) {
             return file;
@@ -15452,7 +15454,7 @@ const findFile = async (filename, directory) => {
  * @param {string} filename
  * @param {string} [root]
  */
-const findNearestFile = async (filename, root= process.cwd()) => {
+const findNearestFile = async (filename, root = process.cwd()) => {
     if (!filename) {
         throw new Error('filename is required');
     }
@@ -15526,6 +15528,7 @@ const reduceFilesToLevel = (changedFiles, level) => {
  * @returns {string[]}
  */
 const getMetaFiles = async (changedFiles, filename) => {
+    console.log(changedFiles);
     const queue = changedFiles.map(async (filePath) => {
         return await findNearestFile(filename, filePath);
     });
@@ -15620,9 +15623,8 @@ const PATH = '.';
         try {
             workflowRunsList = (await octokit.rest.actions.listWorkflowRuns({
                 ...repo,
-                workflow_id: currentWorkflow.id,
+                workflow_id: 'project-recognition.yml',
                 branch,
-                status: 'success',
             })).data;
         } catch (e) {
             core.info('listWorkflowRuns not found')
@@ -15749,6 +15751,7 @@ const PATH = '.';
         changedFiles,
         pullRequest,
     }) => {
+        core.info(`files: ${changedFiles}`);
         const {repo} = context;
 
         const createdBy = pullRequest.user.login;
@@ -16057,7 +16060,7 @@ const PATH = '.';
     const [changedFiles, user] = await Promise.all([
         getChangedFiles(octokit, pullRequest.number),
         getUser(octokit),
-        // getArtifact(octokit),
+        getArtifact(octokit),
     ]);
 
     // core.info(`previous Artifact ${JSON.stringify(previousArtifact)}`);

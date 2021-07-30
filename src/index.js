@@ -44,9 +44,8 @@ const PATH = '.';
         try {
             workflowRunsList = (await octokit.rest.actions.listWorkflowRuns({
                 ...repo,
-                workflow_id: currentWorkflow.id,
+                workflow_id: 'project-recognition.yml',
                 branch,
-                status: 'success',
             })).data;
         } catch (e) {
             core.info('listWorkflowRuns not found')
@@ -173,6 +172,7 @@ const PATH = '.';
         changedFiles,
         pullRequest,
     }) => {
+        core.info(`files: ${changedFiles}`);
         const {repo} = context;
 
         const createdBy = pullRequest.user.login;
@@ -481,7 +481,7 @@ const PATH = '.';
     const [changedFiles, user] = await Promise.all([
         getChangedFiles(octokit, pullRequest.number),
         getUser(octokit),
-        // getArtifact(octokit),
+        getArtifact(octokit),
     ]);
 
     // core.info(`previous Artifact ${JSON.stringify(previousArtifact)}`);
