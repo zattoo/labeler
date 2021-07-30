@@ -71,9 +71,12 @@ const PATH = '.';
         const artifactsList = (await octokit.rest.actions.listWorkflowRunArtifacts({
             ...repo,
             run_id: latestRun.id,
-        }).data);
+        }));
 
-        if (artifactsList.total_count === 0) {
+        core.info(Object.keys(artifactsList).toString());
+        core.info(Object.keys(artifactsList.data).toString());
+
+        if (artifactsList.data.total_count === 0) {
             core.info(`There are no artifacts for run id: ${latestRun.id}`);
             return null;
         }
