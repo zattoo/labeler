@@ -16008,31 +16008,20 @@ const PATH = '.';
         changedFiles,
         pullRequest,
     }) => {
-        const [labels, reviewers] = await Promise.all([
-            autoLabel({
-                octokit,
-                user,
-                labelFilename,
-                changedFiles,
-                pullRequest,
-            }),
-            assignReviewers({
-                octokit,
-                user,
-                ownersFilename,
-                changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
-                pullRequest,
-            }),
-        ])
-        // const labels =
-        //
-        // const reviewers = assignReviewers({
-        //     octokit,
-        //     user,
-        //     ownersFilename,
-        //     changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
-        //     pullRequest,
-        // });
+        const labels = await autoLabel({
+            octokit,
+            user,
+            labelFilename,
+            changedFiles,
+            pullRequest,
+        });
+        const reviewers = await assignReviewers({
+            octokit,
+            user,
+            ownersFilename,
+            changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
+            pullRequest,
+        });
 
         return {
             labels,
@@ -16067,9 +16056,9 @@ const PATH = '.';
     const pullRequest = pull_request || issue;
 
     const [changedFiles, user] = await Promise.all([
-        core.group('Get Changed Files', getChangedFiles(octokit, pullRequest.number)),
-        core.group('Get User', getUser(octokit)),
-        core.group('Get Artifact', getArtifact(octokit, workflowFilename)),
+        getChangedFiles(octokit, pullRequest.number),
+        getUser(octokit),
+        getArtifact(octokit, workflowFilename),
     ]);
 
     // core.info(`previous Artifact ${JSON.stringify(previousArtifact)}`);
