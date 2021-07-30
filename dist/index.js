@@ -15645,6 +15645,8 @@ const PATH = '.';
            return new Date(current.created_at) > new Date(next.created_at) ? current : next;
         });
 
+        core.info(`latest successful run: ${latestRun}`);
+
         const artifactsList = (await octokit.rest.actions.listWorkflowRunArtifacts({
             ...repo,
             run_id: latestRun.id,
