@@ -76,7 +76,8 @@ const PATH = '.';
         })).data;
 
         core.info(artifactsList.total_count);
-        core.info(JSON.stringify(artifactsList));
+        core.info(JSON.stringify(artifactsList.artifacts));
+        core.info(typeof artifactsList.artifacts);
 
         if (artifactsList.total_count === 0) {
             core.info(`There are no artifacts for run id: ${latestRun.id}`);
@@ -90,6 +91,7 @@ const PATH = '.';
             core.info(`Other artifacts on the run are ${artifactsList.artifacts.map((artifactFile) => artifactFile.name)}`);
             return null;
         }
+
 
         await execWithCatch(`curl -L ${desiredArtifact.archive_download_url} -o ${ARTIFACT_NAME}.zip -s`);
         await execWithCatch(`unzip -o -q ${ARTIFACT_NAME}.zip -d ${PATH}`);
