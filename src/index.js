@@ -478,7 +478,7 @@ const PATH = '.';
 
     const pullRequest = pull_request || issue;
 
-    const [changedFiles, user, artifact] = await Promise.all([
+    const [changedFiles, user, previousArtifact] = await Promise.all([
         getChangedFiles(octokit, pullRequest.number),
         getUser(octokit),
         getArtifact(octokit, workflowFilename),
