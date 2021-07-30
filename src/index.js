@@ -24,7 +24,6 @@ const PATH = '.';
      * @returns {Promise<ArtifactData>}
      */
     const getArtifact = async (octokit, workflowFilename, ) => {
-        core.startGroup('Get Artifact');
         const {repo} = context;
 
         // https://docs.github.com/en/actions/reference/environment-variables
@@ -98,7 +97,6 @@ const PATH = '.';
 
         core.info(`artifact data: ${artifactData}`);
 
-        core.endGroup();
         return artifactData;
     };
 
@@ -127,7 +125,6 @@ const PATH = '.';
      * @returns {string[]}
      */
     const getChangedFiles = async (octokit, pull_number) => {
-        core.startGroup('Get Changed Files');
         const {repo} = context;
         const listFilesOptions = octokit.rest.pulls.listFiles.endpoint.merge({
             ...repo,
@@ -144,7 +141,6 @@ const PATH = '.';
             return path.join(process.env.GITHUB_WORKSPACE, file.filename);
         });
 
-        core.endGroup();
         return changedFiles;
     };
 
@@ -155,7 +151,6 @@ const PATH = '.';
      * @returns {string}
      */
     const getUser = async (octokit) => {
-        core.startGroup('Get User');
         let user = 'github-actions';
 
         try {
@@ -164,8 +159,6 @@ const PATH = '.';
         } catch (e) {
             core.info('Failed to get the authenticated user will fallback to github-actions');
         }
-
-        core.endGroup();
 
         return user;
     };
@@ -181,7 +174,6 @@ const PATH = '.';
         changedFiles,
         pullRequest,
     }) => {
-        core.startGroup('Assign reviewers')
         core.info(`files: ${changedFiles}`);
         const {repo} = context;
 
@@ -306,8 +298,6 @@ const PATH = '.';
             await Promise.all(queue);
         }
 
-        core.endGroup();
-
         return reviewersToAdd;
     };
 
@@ -322,7 +312,6 @@ const PATH = '.';
         changedFiles,
         pullRequest,
     }) => {
-        core.startGroup('Auto label');
         const {repo} = context;
 
         // get the current labels on the pull-request
@@ -362,8 +351,6 @@ const PATH = '.';
 
         /** @type {LabelInfo[]} */
         const labelsInfo = query.repository.pullRequest.timelineItems.edges || [];
-
-        core.info('now labeled by the action');
 
         // reducing the query to labels only
         const labeledByTheAction = labelsInfo.reduce((acc, labelInfo) => {
@@ -494,16 +481,16 @@ const PATH = '.';
     } = context.payload;
 
     // Works only on pull-requests or comments
-    if (!pull_request || !comment) {
+    if (!pull_request && !comment) {
         core.error('Only pull requests events or comments can trigger this action');
     }
 
     const pullRequest = pull_request || issue;
 
     const [changedFiles, user] = await Promise.all([
-        getChangedFiles(octokit, pullRequest.number),
-        getUser(octokit),
-        getArtifact(octokit, workflowFilename),
+        core.group('Get Changed Files', getChangedFiles(octokit, pullRequest.number)),
+        core.group('Get User', getUser(octokit)),
+        core.group('Get Artifact', getArtifact(octokit, workflowFilename)),
     ]);
 
     // core.info(`previous Artifact ${JSON.stringify(previousArtifact)}`);
