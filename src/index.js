@@ -24,6 +24,7 @@ const PATH = '.';
      * @returns {Promise<ArtifactData>}
      */
     const getArtifact = async (octokit, workflowFilename, ) => {
+        core.startGroup('Get Artifact');
         const {repo} = context;
 
         // https://docs.github.com/en/actions/reference/environment-variables
@@ -97,6 +98,7 @@ const PATH = '.';
 
         core.info(`artifact data: ${artifactData}`);
 
+        core.endGroup();
         return artifactData;
     };
 
@@ -125,6 +127,7 @@ const PATH = '.';
      * @returns {string[]}
      */
     const getChangedFiles = async (octokit, pull_number) => {
+        core.startGroup('Get Changed Files');
         const {repo} = context;
         const listFilesOptions = octokit.rest.pulls.listFiles.endpoint.merge({
             ...repo,
@@ -141,6 +144,7 @@ const PATH = '.';
             return path.join(process.env.GITHUB_WORKSPACE, file.filename);
         });
 
+        core.endGroup();
         return changedFiles;
     };
 
@@ -151,6 +155,7 @@ const PATH = '.';
      * @returns {string}
      */
     const getUser = async (octokit) => {
+        core.startGroup('Get User');
         let user = 'github-actions';
 
         try {
@@ -159,6 +164,8 @@ const PATH = '.';
         } catch (e) {
             core.info('Failed to get the authenticated user will fallback to github-actions');
         }
+
+        core.endGroup();
 
         return user;
     };
@@ -174,6 +181,7 @@ const PATH = '.';
         changedFiles,
         pullRequest,
     }) => {
+        core.startGroup('Assign reviewers')
         core.info(`files: ${changedFiles}`);
         const {repo} = context;
 
@@ -298,6 +306,8 @@ const PATH = '.';
             await Promise.all(queue);
         }
 
+        core.endGroup();
+
         return reviewersToAdd;
     };
 
@@ -312,6 +322,7 @@ const PATH = '.';
         changedFiles,
         pullRequest,
     }) => {
+        core.startGroup('Auto label');
         const {repo} = context;
 
         // get the current labels on the pull-request
@@ -414,6 +425,8 @@ const PATH = '.';
             await Promise.all(queue);
         }
 
+        core.endGroup();
+
         return labelsToAdd;
     };
 
@@ -429,8 +442,6 @@ const PATH = '.';
         changedFiles,
         pullRequest,
     }) => {
-        core.startGroup('Labels');
-
         const labels = await autoLabel({
             octokit,
             user,
@@ -438,9 +449,6 @@ const PATH = '.';
             changedFiles,
             pullRequest,
         });
-        core.endGroup();
-
-        core.startGroup('Reviewers');
 
         const reviewers = await assignReviewers({
             octokit,
@@ -449,8 +457,6 @@ const PATH = '.';
             changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
             pullRequest,
         });
-
-        core.endGroup();
 
         return {
             labels,
@@ -467,9 +473,10 @@ const PATH = '.';
 
     const octokit = getOctokit(github_token);
 
-    core.startGroup('DEBUG');
+    core.startGroup('Debug');
     core.info(workflowFilename);
     core.info(ignoreFiles);
+    core.info(JSON.stringify(context));
     core.endGroup();
 
     const {
