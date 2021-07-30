@@ -15656,7 +15656,7 @@ const PATH = '.';
 
         core.info(Object.keys(artifactsList).toString());
         core.info(artifactsList.data.total_count);
-        core.info(Object.keys(artifactsList.data.artifacts));
+        core.info(JSON.stringify(artifactsList.data));
 
         if (artifactsList.data.total_count === 0) {
             core.info(`There are no artifacts for run id: ${latestRun.id}`);
