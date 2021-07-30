@@ -15655,7 +15655,8 @@ const PATH = '.';
         }));
 
         core.info(Object.keys(artifactsList).toString());
-        core.info(Object.keys(artifactsList.data).toString());
+        core.info(artifactsList.data.total_count);
+        core.info(artifactsList.data.artifacts);
 
         if (artifactsList.data.total_count === 0) {
             core.info(`There are no artifacts for run id: ${latestRun.id}`);
