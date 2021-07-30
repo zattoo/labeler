@@ -15626,7 +15626,7 @@ const PATH = '.';
                 ...repo,
                 workflow_id: workflowFilename,
                 branch,
-                status: "completed",
+                status: "success"
             })).data;
         } catch (e) {
             core.info('listWorkflowRuns not found')
@@ -15640,6 +15640,8 @@ const PATH = '.';
 
         core.info(`workflow runs list keys: ${Object.keys(workflowRunsList)}`);
         core.info(`workflow runs list total count: ${workflowRunsList.total_count}`);
+
+        core.info(workflowRunsList.workflow_runs.map((workflowRun) => workflowRun.id).toString());
 
         const latestRun = workflowRunsList.workflow_runs.reduce((current, next) => {
            return new Date(current.created_at) > new Date(next.created_at) ? current : next;
