@@ -15755,6 +15755,7 @@ const PATH = '.';
         changedFiles,
         pullRequest,
     }) => {
+        core.startGroup('Reviewers');
         core.info(`files: ${changedFiles}`);
         const {repo} = context;
 
@@ -15879,6 +15880,8 @@ const PATH = '.';
             await Promise.all(queue);
         }
 
+        core.endGroup();
+
         return reviewersToAdd;
     };
 
@@ -15893,6 +15896,7 @@ const PATH = '.';
         changedFiles,
         pullRequest,
     }) => {
+        core.startGroup('Auto label');
         const {repo} = context;
 
         // get the current labels on the pull-request
