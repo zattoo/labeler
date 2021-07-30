@@ -429,7 +429,7 @@ const PATH = '.';
         changedFiles,
         pullRequest,
     }) => {
-        core.info('-----------------------------------');
+        core.startGroup('Labels');
 
         const labels = await autoLabel({
             octokit,
@@ -438,8 +438,9 @@ const PATH = '.';
             changedFiles,
             pullRequest,
         });
+        core.endGroup();
 
-        core.info('-----------------------------------');
+        core.startGroup('Reviewers');
 
         const reviewers = await assignReviewers({
             octokit,
@@ -448,6 +449,8 @@ const PATH = '.';
             changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
             pullRequest,
         });
+
+        core.endGroup();
 
         return {
             labels,
@@ -466,6 +469,7 @@ const PATH = '.';
 
     core.startGroup('DEBUG');
     core.info(workflowFilename);
+    core.info(ignoreFiles);
     core.endGroup();
 
     const {
