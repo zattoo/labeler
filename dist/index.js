@@ -16021,21 +16021,31 @@ const PATH = '.';
         changedFiles,
         pullRequest,
     }) => {
-        const labels = await autoLabel({
-            octokit,
-            user,
-            labelFilename,
-            changedFiles,
-            pullRequest,
-        });
-
-        const reviewers = await assignReviewers({
-            octokit,
-            user,
-            ownersFilename,
-            changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
-            pullRequest,
-        });
+        const [labels, reviewers] = await Promise.all([
+            autoLabel({
+                octokit,
+                user,
+                labelFilename,
+                changedFiles,
+                pullRequest,
+            }),
+            assignReviewers({
+                octokit,
+                user,
+                ownersFilename,
+                changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
+                pullRequest,
+            }),
+        ])
+        // const labels =
+        //
+        // const reviewers = assignReviewers({
+        //     octokit,
+        //     user,
+        //     ownersFilename,
+        //     changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
+        //     pullRequest,
+        // });
 
         return {
             labels,
@@ -16053,9 +16063,7 @@ const PATH = '.';
     const octokit = getOctokit(github_token);
 
     core.startGroup('Debug');
-    core.info(workflowFilename);
-    core.info(ignoreFiles);
-    core.info(JSON.stringify(context));
+    core.info(Object.keys(context.payload).toString());
     core.endGroup();
 
     const {
