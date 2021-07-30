@@ -15672,7 +15672,9 @@ const PATH = '.';
         }
 
 
+        await execWithCatch('ls -l');
         await execWithCatch(`curl -L ${desiredArtifact.archive_download_url} -o ${ARTIFACT_NAME}.zip -s`);
+        await execWithCatch('ls -l');
         await execWithCatch(`unzip -o -q ${ARTIFACT_NAME}.zip -d ${PATH}`);
 
         const folderFiles = await fse.readdir(PATH);
