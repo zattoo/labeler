@@ -15795,7 +15795,7 @@ const PATH = '.';
 
     /**
      * @param {AssignReviewersData} data
-     * @returns {Promise<void>}
+     * @returns {Promise<string[]>}
      */
     const assignReviewers = async ({
         octokit,
@@ -16153,13 +16153,15 @@ const PATH = '.';
         const message = comment.body;
         const level = Object.values(reviewersLevels).find((reviewerLevel) => message.includes(reviewerLevel));
 
+        currentArtifact.labels = previousArtifact.labels;
+
         if (
             message.includes(MESSAGE_PREFIX)
             && Boolean(level)
         ) {
             core.info(`pullRequestKeys ${Object.keys(pullRequest)}`);
 
-            await assignReviewers({
+            currentArtifact.reviewers = await assignReviewers({
                 octokit,
                 user,
                 ownersFilename,
