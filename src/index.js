@@ -20,34 +20,6 @@ const PATH = '.';
 
 (async () => {
     /**
-     *
-     * @param {string} url
-     * @param {string} name
-     * @param {string} github_token
-     * @returns {Promise<void>}
-     */
-    const downloadArtifact = async (url, name, github_token) => {
-        const res = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/zip',
-                Authorization: `Bearer ${github_token}`,
-            },
-        });
-        await new Promise((resolve, reject) => {
-            const fileStream = fs.createWriteStream(`${PATH}/${name}`);
-            res.body.pipe(fileStream);
-            res.body.on("error", (err) => {
-                reject(err);
-            });
-            fileStream.on("finish", function() {
-                core.info('finished');
-                resolve();
-            });
-        });
-    };
-
-    /**
      * @param {InstanceType<typeof GitHub>} octokit
      * @param {string} workflowFilename
      * @param {string} github_token
@@ -122,23 +94,39 @@ const PATH = '.';
             return null;
         }
 
-        await downloadArtifact(desiredArtifact.archive_download_url, `${ARTIFACT_NAME}.zip`, github_token);
 
-        // const response = await fetch(desiredArtifact.archive_download_url, {
-        //     method: 'GET',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //         Authorization: `Bearer ${github_token}`,
-        //     },
-        // });
-        await utils.execWithCatch(`unzip -o -q ${PATH}/${ARTIFACT_NAME}.zip -d ${PATH}`);
+        const ZIP_FILE_NAME = `${PATH}/${ARTIFACT_NAME}.zip`;
 
+        // Download
+        const res = await fetch(desiredArtifact.archive_download_url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/zip',
+                Authorization: `Bearer ${github_token}`,
+            },
+        });
+
+        // Save to Folder
+        await new Promise((resolve, reject) => {
+            const fileStream = fs.createWriteStream(ZIP_FILE_NAME);
+            res.body.pipe(fileStream);
+            res.body.on("error", (err) => {
+                reject(err);
+            });
+            fileStream.on("finish", function() {
+                core.info('finished');
+                resolve();
+            });
+        });
+
+        // Extract
+        await utils.execWithCatch(`unzip -o -q ${ZIP_FILE_NAME} -d ${PATH}`);
 
         const folderFiles = await fse.readdir(PATH);
 
         core.info(`files list in ${PATH}: ${folderFiles}`);
 
-
+        // Read
         const artifactData = await fse.readJSON(`${PATH}/${ARTIFACT_NAME}.json`);
 
         core.info(`artifact data: ${artifactData}`);
