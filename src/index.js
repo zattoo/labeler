@@ -102,10 +102,9 @@ const PATH = '.';
                 Authorization: `Bearer ${github_token}`,
             },
         }).then((response) => {
+            core.info(response.arrayBuffer());
             return response.arrayBuffer()
         });
-
-        core.info(data);
 
 
         // await childProcess({command: 'ls -l'});
