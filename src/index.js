@@ -335,7 +335,7 @@ const PATH = '.';
 
         core.endGroup();
 
-        return reviewersToAdd;
+        return reviewersFromFiles;
     };
 
     /**
@@ -452,7 +452,7 @@ const PATH = '.';
 
         core.endGroup();
 
-        return labelsToAdd;
+        return labelsFromFiles;
     };
 
     /**
@@ -542,10 +542,14 @@ const PATH = '.';
             pullRequest: pull_request,
         });
 
+        core.info(JSON.stringify(handlerData));
+
         currentArtifact = {
             ...currentArtifact,
             ...handlerData
         }
+
+        core.info(JSON.stringify(currentArtifact));
     }
 
     if (comment) {
