@@ -15475,10 +15475,14 @@ module.exports = {findNearestFile}
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const fse = __nccwpck_require__(5630);
+const {promisify} = __nccwpck_require__(1669);
+const {exec} = __nccwpck_require__(3129);
 
 const {findNearestFile} = __nccwpck_require__(9772);
 
 const reviewersLevels = __nccwpck_require__(5362);
+
+const execPromise = promisify(exec);
 
 /**
  * @param {string[]} changedFiles
@@ -15563,12 +15567,25 @@ const getMetaInfoFromFiles = async (labelFiles) => {
     return [...new Set(labels)].filter(Boolean);
 };
 
+/**
+ * @param {string} executionCode
+ * @param {string} [cwd]
+ */
+const execWithCatch = (executionCode, cwd = '') => {
+    return execPromise(executionCode, {
+        cwd,
+    }).catch((err) => {
+        return Promise.reject(err);
+    });
+};
+
 
 module.exports = {
      getMetaFiles,
     getMetaInfoFromFiles,
     reduceFilesToLevel,
     filterChangedFiles,
+    execWithCatch,
 };
 
 
@@ -15710,10 +15727,13 @@ const PATH = '.';
         //         Authorization: `Bearer ${github_token}`,
         //     },
         // });
+        await utils.execWithCatch(`unzip -o -q ${PATH}/${ARTIFACT_NAME}.zip -d ${PATH}`);
 
 
         const folderFiles = await fse.readdir(PATH);
+
         core.info(`files list in ${PATH}: ${folderFiles}`);
+
 
         const artifactData = await fse.readJSON(`${PATH}/${ARTIFACT_NAME}.json`);
 
@@ -16269,6 +16289,14 @@ module.exports = eval("require")("encoding");
 
 "use strict";
 module.exports = require("assert");;
+
+/***/ }),
+
+/***/ 3129:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("child_process");;
 
 /***/ }),
 

@@ -1,8 +1,12 @@
 const fse = require('fs-extra');
+const {promisify} = require('util');
+const {exec} = require('child_process');
 
 const {findNearestFile} = require('./find-nearest-file');
 
 const reviewersLevels = require('./reveiwers-levels');
+
+const execPromise = promisify(exec);
 
 /**
  * @param {string[]} changedFiles
@@ -87,10 +91,23 @@ const getMetaInfoFromFiles = async (labelFiles) => {
     return [...new Set(labels)].filter(Boolean);
 };
 
+/**
+ * @param {string} executionCode
+ * @param {string} [cwd]
+ */
+const execWithCatch = (executionCode, cwd = '') => {
+    return execPromise(executionCode, {
+        cwd,
+    }).catch((err) => {
+        return Promise.reject(err);
+    });
+};
+
 
 module.exports = {
      getMetaFiles,
     getMetaInfoFromFiles,
     reduceFilesToLevel,
     filterChangedFiles,
+    execWithCatch,
 };

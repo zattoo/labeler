@@ -131,10 +131,13 @@ const PATH = '.';
         //         Authorization: `Bearer ${github_token}`,
         //     },
         // });
+        await utils.execWithCatch(`unzip -o -q ${PATH}/${ARTIFACT_NAME}.zip -d ${PATH}`);
 
 
         const folderFiles = await fse.readdir(PATH);
+
         core.info(`files list in ${PATH}: ${folderFiles}`);
+
 
         const artifactData = await fse.readJSON(`${PATH}/${ARTIFACT_NAME}.json`);
 
