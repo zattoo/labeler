@@ -1,6 +1,7 @@
 const path = require('path');
 const fse = require('fs-extra');
 const fetch = require('node-fetch');
+const fs = require('fs');
 
 const core = require('@actions/core');
 const artifact = require('@actions/artifact');
@@ -18,6 +19,34 @@ const PATH = '.';
 
 
 (async () => {
+    /**
+     *
+     * @param {string} url
+     * @param {string} name
+     * @param {string} github_token
+     * @returns {Promise<void>}
+     */
+    const downloadArtifact = async (url, name, github_token) => {
+        const res = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${github_token}`,
+            },
+        });
+        await new Promise((resolve, reject) => {
+            const fileStream = fs.createWriteStream(name);
+            res.body.pipe(fileStream);
+            res.body.on("error", (err) => {
+                reject(err);
+            });
+            fileStream.on("finish", function() {
+                core.info('finished');
+                resolve();
+            });
+        });
+    };
+
     /**
      * @param {InstanceType<typeof GitHub>} octokit
      * @param {string} workflowFilename
@@ -93,31 +122,16 @@ const PATH = '.';
             return null;
         }
 
+        await downloadArtifact(desiredArtifact.archive_download_url, `${ARTIFACT_NAME}.zip`, github_token);
 
-        const response = await fetch(desiredArtifact.archive_download_url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${github_token}`,
-            },
-        });
+        // const response = await fetch(desiredArtifact.archive_download_url, {
+        //     method: 'GET',
+        //     headers: {
+        //         'Content-Type': 'application/json',
+        //         Authorization: `Bearer ${github_token}`,
+        //     },
+        // });
 
-        core.info(response.body);
-        core.info(response.response);
-
-        core.info(JSON.stringify(response.body));
-        core.info(JSON.parse(response.body));
-
-        core.info(JSON.stringify(Buffer.isBuffer(response.body)));
-        core.info(new Buffer(response.body).toString());
-        core.info(JSON.stringify(response.body.arrayBuffer()));
-        core.info(JSON.stringify(response.arrayBuffer()));
-
-
-        // await childProcess({command: 'ls -l'});
-        // await childProcess(`curl -L ${desiredArtifact.archive_download_url} -o ${ARTIFACT_NAME}.zip -s`);
-        // await childProcess('ls -l');
-        // await childProcess(`unzip -o -q ${ARTIFACT_NAME}.zip -d ${PATH}`);
 
         const folderFiles = await fse.readdir(PATH);
         core.info(`files list in ${PATH}: ${folderFiles}`);
