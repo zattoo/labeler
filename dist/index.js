@@ -15645,24 +15645,24 @@ const PATH = '.';
                 ...repo,
                 workflow_id: workflowFilename,
                 branch,
-                status: "success"
-            })).data;
+            })).data.workflow_runs.filter((run) => {
+                return run.conclusion === 'success'
+            });
         } catch (e) {
             core.info('listWorkflowRuns not found')
             return null;
         }
 
-        if (workflowRunsList.total_count === 0) {
+        if (workflowRunsList.length === 0) {
             core.info(`There are no successful workflow runs for workflow id: ${currentWorkflow.id} on the branch: ${branch}`);
             return null;
         }
 
-        core.info(`workflow runs list keys: ${Object.keys(workflowRunsList)}`);
-        core.info(`workflow runs list total count: ${workflowRunsList.total_count}`);
+        core.info(`workflow runs list total count: ${workflowRunsList.length}`);
 
-        core.info(workflowRunsList.workflow_runs.map((workflowRun) => workflowRun.id).toString());
+        core.info(workflowRunsList.map((workflowRun) => workflowRun.id).toString());
 
-        const latestRun = workflowRunsList.workflow_runs.reduce((current, next) => {
+        const latestRun = workflowRunsList.reduce((current, next) => {
            return new Date(current.created_at) > new Date(next.created_at) ? current : next;
         });
 
