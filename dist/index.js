@@ -15680,7 +15680,7 @@ const PATH = '.';
             },
         });
 
-        core.info(data);
+        core.info(data.body);
         core.info(JSON.stringify(data.arrayBuffer()));
 
 
