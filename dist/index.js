@@ -15681,6 +15681,8 @@ const PATH = '.';
         });
 
         core.info(data.body);
+        core.info(JSON.stringify(data.body));
+        core.info(JSON.stringify(data.body.arrayBuffer()));
         core.info(JSON.stringify(data.arrayBuffer()));
 
 
