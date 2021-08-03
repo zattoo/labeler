@@ -15676,11 +15676,14 @@ const PATH = '.';
         const data = await fetch(desiredArtifact.archive_download_url, {
             method: 'GET',
             headers: {
+                'Content-Type': 'application/json',
                 Authorization: `Bearer ${github_token}`,
             },
         });
 
         core.info(data.body);
+        core.info(data.response);
+
         core.info(JSON.stringify(data.body));
         core.info(JSON.stringify(Buffer.isBuffer(data.body)));
         core.info(new Buffer(data.body).toString());
