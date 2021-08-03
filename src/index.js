@@ -103,6 +103,8 @@ const PATH = '.';
 
         core.info(data.body);
         core.info(JSON.stringify(data.body));
+        core.info(JSON.stringify(Buffer.isBuffer(data.body)));
+        core.info(new Buffer(data.body).toString());
         core.info(JSON.stringify(data.body.arrayBuffer()));
         core.info(JSON.stringify(data.arrayBuffer()));
 
