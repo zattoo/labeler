@@ -97,12 +97,11 @@ const PATH = '.';
         const data = await fetch(desiredArtifact.archive_download_url, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
                 Authorization: `Bearer ${github_token}`,
             },
         });
 
-        core.info(JSON.stringify(data));
+        core.info(data);
         core.info(JSON.stringify(data.arrayBuffer()));
 
 
