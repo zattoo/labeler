@@ -16138,13 +16138,14 @@ const PATH = '.';
 
         if (message.includes(MESSAGE_PREFIX_NEXT) || message.includes(MESSAGE_PREFIX_PREVIOUS)) {
 
+            currentArtifact.level = previousArtifact.level + (message.includes(MESSAGE_PREFIX_NEXT) ? 1 : -1);
             currentArtifact.reviewers = await assignReviewers({
                 octokit,
                 user,
                 ownersFilename,
                 changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
                 pullRequest,
-                level: previousArtifact.level,
+                level: currentArtifact.level,
             });
         }
     }
