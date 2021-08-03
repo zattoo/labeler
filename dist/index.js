@@ -15609,12 +15609,12 @@ const PATH = '.';
         const res = await fetch(url, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/zip',
                 Authorization: `Bearer ${github_token}`,
             },
         });
         await new Promise((resolve, reject) => {
-            const fileStream = fs.createWriteStream(name);
+            const fileStream = fs.createWriteStream(`${PATH}/${name}`);
             res.body.pipe(fileStream);
             res.body.on("error", (err) => {
                 reject(err);
