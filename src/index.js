@@ -9,7 +9,6 @@ const {
 } = require('@actions/github');
 
 const utils = require('./get-meta-info');
-const {execWithCatch} = require('./utils');
 const reviewersLevels = require('./reveiwers-levels');
 
 const MESSAGE_PREFIX = '#Assign';
@@ -21,9 +20,10 @@ const PATH = '.';
     /**
      * @param {InstanceType<typeof GitHub>} octokit
      * @param {string} workflowFilename
+     * @param {string} github_token
      * @returns {Promise<ArtifactData>}
      */
-    const getArtifact = async (octokit, workflowFilename, ) => {
+    const getArtifact = async (octokit, workflowFilename, github_token) => {
         const {repo} = context;
 
         // https://docs.github.com/en/actions/reference/environment-variables
@@ -93,10 +93,20 @@ const PATH = '.';
         }
 
 
-        await execWithCatch('ls -l');
-        await execWithCatch(`curl -L ${desiredArtifact.archive_download_url} -o ${ARTIFACT_NAME}.zip -s`);
-        await execWithCatch('ls -l');
-        await execWithCatch(`unzip -o -q ${ARTIFACT_NAME}.zip -d ${PATH}`);
+        try {
+            const data = await octokit.graphql(desiredArtifact.archive_download_url);
+
+            core.info(data);
+            core.info(data.arrayBuffer);
+        } catch (e) {
+            core.error(e);
+        }
+
+
+        // await childProcess({command: 'ls -l'});
+        // await childProcess(`curl -L ${desiredArtifact.archive_download_url} -o ${ARTIFACT_NAME}.zip -s`);
+        // await childProcess('ls -l');
+        // await childProcess(`unzip -o -q ${ARTIFACT_NAME}.zip -d ${PATH}`);
 
         const folderFiles = await fse.readdir(PATH);
         core.info(`files list in ${PATH}: ${folderFiles}`);
@@ -491,7 +501,7 @@ const PATH = '.';
     const [changedFiles, user, previousArtifact] = await Promise.all([
         getChangedFiles(octokit, pullRequest.number),
         getUser(octokit),
-        getArtifact(octokit, workflowFilename),
+        getArtifact(octokit, workflowFilename, github_token),
     ]);
 
     core.info(`previous Artifact ${JSON.stringify(previousArtifact)}`);

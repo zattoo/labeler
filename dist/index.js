@@ -15588,7 +15588,6 @@ const {
 } = __nccwpck_require__(5438);
 
 const utils = __nccwpck_require__(6742);
-const {execWithCatch} = __nccwpck_require__(1608);
 const reviewersLevels = __nccwpck_require__(5362);
 
 const MESSAGE_PREFIX = '#Assign';
@@ -15600,9 +15599,10 @@ const PATH = '.';
     /**
      * @param {InstanceType<typeof GitHub>} octokit
      * @param {string} workflowFilename
+     * @param {string} github_token
      * @returns {Promise<ArtifactData>}
      */
-    const getArtifact = async (octokit, workflowFilename, ) => {
+    const getArtifact = async (octokit, workflowFilename, github_token) => {
         const {repo} = context;
 
         // https://docs.github.com/en/actions/reference/environment-variables
@@ -15672,10 +15672,20 @@ const PATH = '.';
         }
 
 
-        await execWithCatch('ls -l');
-        await execWithCatch(`curl -L ${desiredArtifact.archive_download_url} -o ${ARTIFACT_NAME}.zip -s`);
-        await execWithCatch('ls -l');
-        await execWithCatch(`unzip -o -q ${ARTIFACT_NAME}.zip -d ${PATH}`);
+        try {
+            const data = await octokit.graphql(desiredArtifact.archive_download_url);
+
+            core.info(data);
+            core.info(data.arrayBuffer);
+        } catch (e) {
+            core.error(e);
+        }
+
+
+        // await childProcess({command: 'ls -l'});
+        // await childProcess(`curl -L ${desiredArtifact.archive_download_url} -o ${ARTIFACT_NAME}.zip -s`);
+        // await childProcess('ls -l');
+        // await childProcess(`unzip -o -q ${ARTIFACT_NAME}.zip -d ${PATH}`);
 
         const folderFiles = await fse.readdir(PATH);
         core.info(`files list in ${PATH}: ${folderFiles}`);
@@ -16070,7 +16080,7 @@ const PATH = '.';
     const [changedFiles, user, previousArtifact] = await Promise.all([
         getChangedFiles(octokit, pullRequest.number),
         getUser(octokit),
-        getArtifact(octokit, workflowFilename),
+        getArtifact(octokit, workflowFilename, github_token),
     ]);
 
     core.info(`previous Artifact ${JSON.stringify(previousArtifact)}`);
@@ -16221,33 +16231,6 @@ module.exports = {
 
 /***/ }),
 
-/***/ 1608:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const {exec} = __nccwpck_require__(3129);
-const {promisify} = __nccwpck_require__(1669);
-
-const execPromise = promisify(exec);
-
-/**
- * @param {string} executionCode
- * @param {string} [cwd]
- */
-const execWithCatch = (executionCode, cwd = '') => {
-    return execPromise(executionCode, {
-        cwd,
-    }).catch((err) => {
-        return Promise.reject(err);
-    });
-};
-
-module.exports = {
-    execWithCatch
-};
-
-
-/***/ }),
-
 /***/ 2877:
 /***/ ((module) => {
 
@@ -16261,14 +16244,6 @@ module.exports = eval("require")("encoding");
 
 "use strict";
 module.exports = require("assert");;
-
-/***/ }),
-
-/***/ 3129:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("child_process");;
 
 /***/ }),
 
