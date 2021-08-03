@@ -94,7 +94,7 @@ const PATH = '.';
         }
 
 
-        const data = await fetch(desiredArtifact.archive_download_url, {
+        const response = await fetch(desiredArtifact.archive_download_url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -102,14 +102,16 @@ const PATH = '.';
             },
         });
 
-        core.info(data.body);
-        core.info(data.response);
+        core.info(response.body);
+        core.info(response.response);
 
-        core.info(JSON.stringify(data.body));
-        core.info(JSON.stringify(Buffer.isBuffer(data.body)));
-        core.info(new Buffer(data.body).toString());
-        core.info(JSON.stringify(data.body.arrayBuffer()));
-        core.info(JSON.stringify(data.arrayBuffer()));
+        core.info(JSON.stringify(response.body));
+        core.info(JSON.parse(response.body));
+
+        core.info(JSON.stringify(Buffer.isBuffer(response.body)));
+        core.info(new Buffer(response.body).toString());
+        core.info(JSON.stringify(response.body.arrayBuffer()));
+        core.info(JSON.stringify(response.arrayBuffer()));
 
 
         // await childProcess({command: 'ls -l'});
