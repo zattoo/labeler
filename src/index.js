@@ -1,5 +1,6 @@
 const path = require('path');
 const fse = require('fs-extra');
+const fetch = require('node-fetch');
 
 const core = require('@actions/core');
 const artifact = require('@actions/artifact');
@@ -9,6 +10,7 @@ const {
 } = require('@actions/github');
 
 const utils = require('./get-meta-info');
+const {childProcess} = require('./utils');
 const reviewersLevels = require('./reveiwers-levels');
 
 const MESSAGE_PREFIX = '#Assign';
@@ -93,14 +95,17 @@ const PATH = '.';
         }
 
 
-        try {
-            const data = await octokit.graphql(desiredArtifact.archive_download_url);
+        const data = fetch(desiredArtifact.archive_download_url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${github_token}`,
+            },
+        }).then((response) => {
+            return response.arrayBuffer()
+        });
 
-            core.info(data);
-            core.info(data.arrayBuffer);
-        } catch (e) {
-            core.error(e);
-        }
+        core.info(data);
 
 
         // await childProcess({command: 'ls -l'});
