@@ -102,7 +102,7 @@ const PATH = '.';
                 Authorization: `Bearer ${github_token}`,
             },
         }).then((response) => {
-            core.info(response.arrayBuffer());
+            core.info(JSON.stringify(response.arrayBuffer()));
             return response.arrayBuffer()
         });
 
