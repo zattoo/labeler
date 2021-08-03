@@ -10,7 +10,6 @@ const {
 } = require('@actions/github');
 
 const utils = require('./get-meta-info');
-const {childProcess} = require('./utils');
 const reviewersLevels = require('./reveiwers-levels');
 
 const MESSAGE_PREFIX = '#Assign';
@@ -95,16 +94,16 @@ const PATH = '.';
         }
 
 
-        const data = fetch(desiredArtifact.archive_download_url, {
+        const data = await fetch(desiredArtifact.archive_download_url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${github_token}`,
             },
-        }).then((response) => {
-            core.info(JSON.stringify(response.arrayBuffer()));
-            return response.arrayBuffer()
         });
+
+        core.info(JSON.stringify(data));
+        core.info(JSON.stringify(data.arrayBuffer()));
 
 
         // await childProcess({command: 'ls -l'});

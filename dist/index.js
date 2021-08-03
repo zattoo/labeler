@@ -15589,7 +15589,6 @@ const {
 } = __nccwpck_require__(5438);
 
 const utils = __nccwpck_require__(6742);
-const {childProcess} = __nccwpck_require__(1608);
 const reviewersLevels = __nccwpck_require__(5362);
 
 const MESSAGE_PREFIX = '#Assign';
@@ -15674,16 +15673,16 @@ const PATH = '.';
         }
 
 
-        const data = fetch(desiredArtifact.archive_download_url, {
+        const data = await fetch(desiredArtifact.archive_download_url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${github_token}`,
             },
-        }).then((response) => {
-            core.info(JSON.stringify(response.arrayBuffer()));
-            return response.arrayBuffer()
         });
+
+        core.info(JSON.stringify(data));
+        core.info(JSON.stringify(data.arrayBuffer()));
 
 
         // await childProcess({command: 'ls -l'});
@@ -16235,60 +16234,6 @@ module.exports = {
 
 /***/ }),
 
-/***/ 1608:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const {spawn} = __nccwpck_require__(3129);
-
-/**
- *
- * @param {childProcessData} data
- * @returns {Promise<void>}
- */
-const childProcess = (data) => {
-    const command = spawn(data.command, data.args, {
-        cwd: data.cwd,
-        env: data.env,
-        stdio: [
-            process.stdin,
-            process.stdout,
-            process.stderr,
-        ],
-    });
-
-    return new Promise((resolve, reject) => {
-        command.once('exit', (code) => {
-            if (code === 0) {
-                resolve(undefined);
-            } else {
-                reject(new Error(`Exit with error code: ${code}`));
-            }
-        });
-        command.once('error', (error) => {
-            reject(error);
-        });
-    });
-};
-
-module.exports = {
-    childProcess
-};
-
-/**
- * @typedef {import('child_process').ChildProcess} ChildProcess
- */
-
-/**
- * @typedef {Object} childProcessData
- * @prop {string} command
- * @prop {string[]} args
- * @prop {string} cwd
- * @prop {Record<string, string>} [env]
- */
-
-
-/***/ }),
-
 /***/ 2877:
 /***/ ((module) => {
 
@@ -16302,14 +16247,6 @@ module.exports = eval("require")("encoding");
 
 "use strict";
 module.exports = require("assert");;
-
-/***/ }),
-
-/***/ 3129:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("child_process");;
 
 /***/ }),
 
