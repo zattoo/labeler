@@ -21,8 +21,9 @@ const nextLevelUp = (directory) => {
  *
  * @param {string} filename
  * @param {string} directory
+ * @param {number} level
  */
-const findFile = async (filename, directory) => {
+const findFile = async (filename, directory, level) => {
     if (!directory) {
         return null;
     }
@@ -35,21 +36,24 @@ const findFile = async (filename, directory) => {
         console.log(`${file}: ${fileExists}`);
 
         if (fileExists) {
-            return file;
+            return level === 0
+                ? file
+                : await findFile(filename, nextLevelUp(directory), level--);
         }
 
-        return await findFile(filename, nextLevelUp(directory));
+        return await findFile(filename, nextLevelUp(directory), level);
     } catch (e) {
-        return await findFile(filename, nextLevelUp(directory));
+        return await findFile(filename, nextLevelUp(directory), level);
     }
 };
 
 /**
  *
  * @param {string} filename
- * @param {string} [root]
+ * @param {string} root
+ * @param {number} level
  */
-const findNearestFile = async (filename, root = process.cwd()) => {
+const findNearestFile = async (filename, root, level) => {
     if (!filename) {
         throw new Error('filename is required');
     }
@@ -58,7 +62,7 @@ const findNearestFile = async (filename, root = process.cwd()) => {
         throw new Error('filename must be just a filename and not a path')
     }
 
-    return await findFile(filename, root);
+    return await findFile(filename, root, level);
 };
 
 module.exports = {findNearestFile}

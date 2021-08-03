@@ -13,7 +13,8 @@ const {
 const utils = require('./get-meta-info');
 const reviewersLevels = require('./reveiwers-levels');
 
-const MESSAGE_PREFIX = '#Assign';
+const MESSAGE_PREFIX_NEXT = '#Assign next';
+const MESSAGE_PREFIX_PREVIOUS = '#Assign previous';
 const ARTIFACT_NAME = 'project-recognition';
 const PATH = '.';
 
@@ -27,6 +28,13 @@ const PATH = '.';
      */
     const getArtifact = async (octokit, workflowFilename, github_token) => {
         const {repo} = context;
+
+        /** @type {ArtifactData} */
+        const DEFAULT_ARTIFACT = {
+            level: 0,
+            labels: [],
+            reviewers: [],
+        };
 
         // https://docs.github.com/en/actions/reference/environment-variables
         const workflowName = process.env.GITHUB_WORKFLOW;
@@ -54,12 +62,12 @@ const PATH = '.';
             });
         } catch (e) {
             core.info('listWorkflowRuns not found')
-            return null;
+            return DEFAULT_ARTIFACT;
         }
 
         if (workflowRunsList.length === 0) {
             core.info(`There are no successful workflow runs for workflow id: ${currentWorkflow.id} on the branch: ${branch}`);
-            return null;
+            return DEFAULT_ARTIFACT;
         }
 
         core.info(`workflow runs list total count: ${workflowRunsList.length}`);
@@ -83,7 +91,7 @@ const PATH = '.';
 
         if (artifactsList.total_count === 0) {
             core.info(`There are no artifacts for run id: ${latestRun.id}`);
-            return null;
+            return DEFAULT_ARTIFACT;
         }
 
         const desiredArtifact = artifactsList.artifacts.find((artifactFile) => artifactFile.name === ARTIFACT_NAME);
@@ -91,7 +99,7 @@ const PATH = '.';
         if (!desiredArtifact) {
             core.info(`There are no artifacts with the name: ${ARTIFACT_NAME}`);
             core.info(`Other artifacts on the run are ${artifactsList.artifacts.map((artifactFile) => artifactFile.name)}`);
-            return null;
+            return DEFAULT_ARTIFACT;
         }
 
 
@@ -207,6 +215,7 @@ const PATH = '.';
         ownersFilename,
         changedFiles,
         pullRequest,
+        level,
     }) => {
         core.startGroup('Reviewers');
         core.info(`files: ${changedFiles}`);
@@ -277,7 +286,7 @@ const PATH = '.';
         }, []);
 
         // get reviewers
-        const reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename);
+        const reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename, level);
 
         if (reviewersFiles.length <= 0) {
             await octokit.rest.issues.createComment({
@@ -408,7 +417,7 @@ const PATH = '.';
 
 
         // get labels
-        const labelsFiles = await utils.getMetaFiles(changedFiles, labelFilename);
+        const labelsFiles = await utils.getMetaFiles(changedFiles, labelFilename, 0);
         const labelsFromFiles = await utils.getMetaInfoFromFiles(labelsFiles);
 
         const labelsToRemove = labeledByTheAction.filter((label) => {
@@ -466,6 +475,7 @@ const PATH = '.';
         ignoreFiles,
         changedFiles,
         pullRequest,
+        level,
     }) => {
         const labels = await autoLabel({
             octokit,
@@ -480,6 +490,7 @@ const PATH = '.';
             ownersFilename,
             changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
             pullRequest,
+            level,
         });
 
         return {
@@ -540,6 +551,7 @@ const PATH = '.';
             ignoreFiles,
             changedFiles,
             pullRequest: pull_request,
+            level: previousArtifact.level,
         });
 
         core.info(JSON.stringify(handlerData));
@@ -555,22 +567,18 @@ const PATH = '.';
     if (comment) {
         core.info('me here yeay');
         const message = comment.body;
-        const level = Object.values(reviewersLevels).find((reviewerLevel) => message.includes(reviewerLevel));
 
         currentArtifact.labels = previousArtifact.labels;
 
-        if (
-            message.includes(MESSAGE_PREFIX)
-            && Boolean(level)
-        ) {
-            core.info(`pullRequestKeys ${Object.keys(pullRequest)}`);
+        if (message.includes(MESSAGE_PREFIX_NEXT) || message.includes(MESSAGE_PREFIX_PREVIOUS)) {
 
             currentArtifact.reviewers = await assignReviewers({
                 octokit,
                 user,
                 ownersFilename,
-                changedFiles: utils.reduceFilesToLevel(utils.filterChangedFiles(changedFiles, ignoreFiles), level),
-                pullRequest: pullRequest,
+                changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
+                pullRequest,
+                level: previousArtifact.level,
             });
         }
     }

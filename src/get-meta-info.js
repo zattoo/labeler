@@ -4,8 +4,6 @@ const {exec} = require('child_process');
 
 const {findNearestFile} = require('./find-nearest-file');
 
-const reviewersLevels = require('./reveiwers-levels');
-
 const execPromise = promisify(exec);
 
 /**
@@ -21,44 +19,13 @@ const filterChangedFiles = (changedFiles, ignoreFiles) => {
 
 /**
  * @param {string[]} changedFiles
- * @param {string} level
- * @returns {string[]}
- */
-const reduceFilesToLevel = (changedFiles, level) => {
-    switch (level) {
-        case reviewersLevels.REPO: {
-            return ['/'];
-        }
-
-        case reviewersLevels.PROJECT: {
-            return [new Set(...changedFiles.map((path) => {
-                const splitPath = path.split('/');
-                const projectsIndex = splitPath.indexOf('projects');
-
-                if (projectsIndex === -1) {
-                    return path;
-                }
-
-                return `${splitPath[projectsIndex]}/${splitPath[projectsIndex + 1]}`;
-            }))];
-        }
-
-        case reviewersLevels.OWNER:
-        default: {
-            return changedFiles;
-        }
-    }
-};
-
-/**
- * @param {string[]} changedFiles
  * @param {string} filename
+ * @param {number} level
  * @returns {string[]}
  */
-const getMetaFiles = async (changedFiles, filename) => {
-    console.log(changedFiles);
+const getMetaFiles = async (changedFiles, filename,level) => {
     const queue = changedFiles.map(async (filePath) => {
-        return await findNearestFile(filename, filePath);
+        return await findNearestFile(filename, filePath, level);
     });
 
     const results = await Promise.all(queue);
@@ -105,9 +72,8 @@ const execWithCatch = (executionCode, cwd = '') => {
 
 
 module.exports = {
-     getMetaFiles,
+    getMetaFiles,
     getMetaInfoFromFiles,
-    reduceFilesToLevel,
     filterChangedFiles,
     execWithCatch,
 };
