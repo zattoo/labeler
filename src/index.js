@@ -215,8 +215,8 @@ const PATH = '.';
         ownersFilename,
         changedFiles,
         pullRequest,
-        level,
         isComment,
+        previousArtifact,
     }) => {
         core.startGroup('Reviewers');
         core.info(`files: ${changedFiles}`);
@@ -238,56 +238,59 @@ const PATH = '.';
             });
         }
 
-        // get the reviewers request history on the pull-request
-        const query = await octokit.graphql(`{
-            repository(owner: "${repo.owner}", name: "${repo.repo}") {
-                pullRequest(number: ${pullRequest.number}) {
-                    timelineItems(last: 100, itemTypes: [REVIEW_REQUESTED_EVENT]) {
-                        totalCount
-                        edges {
-                            node {
-                                __typename
-                                 ... on ReviewRequestedEvent {
-                                    createdAt
-                                    actor {
-                                        login
-                                    }
-                                    requestedReviewer {
-                                        ... on User {
-                                            login
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }`);
-
-        /** @type {ReviewerInfo[]} */
-        const reviewersInfo = query.repository.pullRequest.timelineItems.edges || [];
+        // // get the reviewers request history on the pull-request
+        // const query = await octokit.graphql(`{
+        //     repository(owner: "${repo.owner}", name: "${repo.repo}") {
+        //         pullRequest(number: ${pullRequest.number}) {
+        //             timelineItems(last: 100, itemTypes: [REVIEW_REQUESTED_EVENT]) {
+        //                 totalCount
+        //                 edges {
+        //                     node {
+        //                         __typename
+        //                          ... on ReviewRequestedEvent {
+        //                             createdAt
+        //                             actor {
+        //                                 login
+        //                             }
+        //                             requestedReviewer {
+        //                                 ... on User {
+        //                                     login
+        //                                 }
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }`);
+        //
+        // /** @type {ReviewerInfo[]} */
+        // const reviewersInfo = query.repository.pullRequest.timelineItems.edges || [];
 
         core.info('now reviewers info');
 
         // reducing the query to labels only
-        const assignedByTheAction = reviewersInfo.reduce((acc, reviewerEvent) => {
-            const {login} = reviewerEvent.node.requestedReviewer;
+        // const assignedByTheAction = reviewersInfo.reduce((acc, reviewerEvent) => {
+        //     const {login} = reviewerEvent.node.requestedReviewer;
+        //
+        //     // If not included already, match github-actions actor and is currently used on the pull-request
+        //     if (
+        //         !acc.includes(login) &&
+        //         reviewerEvent.node.actor.login === user &&
+        //         reviewersOnPr.includes(login)
+        //     ) {
+        //         acc.push(login);
+        //     }
+        //
+        //     return acc;
+        // }, []);
 
-            // If not included already, match github-actions actor and is currently used on the pull-request
-            if (
-                !acc.includes(login) &&
-                reviewerEvent.node.actor.login === user &&
-                reviewersOnPr.includes(login)
-            ) {
-                acc.push(login);
-            }
+        const assignedByTheAction = previousArtifact.reviewers;
 
-            return acc;
-        }, []);
 
         // get reviewers
-        const reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename, level);
+        const reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename, previousArtifact.level);
 
         if (reviewersFiles.length <= 0) {
             await octokit.rest.issues.createComment({
@@ -360,6 +363,7 @@ const PATH = '.';
         labelFilename,
         changedFiles,
         pullRequest,
+        previousArtifact,
     }) => {
         core.startGroup('Auto label');
         const {repo} = context;
@@ -373,34 +377,36 @@ const PATH = '.';
                 return label.name;
             }
         });
+        //
+        // // get the labels history on the pull-request
+        // const query = await octokit.graphql(`{
+        //     repository(owner: "${repo.owner}", name: "${repo.repo}") {
+        //         pullRequest(number: ${pullRequest.number}) {
+        //             timelineItems(last: 100, itemTypes: [LABELED_EVENT]) {
+        //                 totalCount
+        //                 edges {
+        //                     node {
+        //                         __typename
+        //                         ... on LabeledEvent {
+        //                             createdAt
+        //                             label {
+        //                                 name
+        //                             }
+        //                             actor {
+        //                                 login
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //          }
+        //     }
+        // }`);
+        //
+        // /** @type {LabelInfo[]} */
+        // const labelsInfo = query.repository.pullRequest.timelineItems.edges || [];
 
-        // get the labels history on the pull-request
-        const query = await octokit.graphql(`{
-            repository(owner: "${repo.owner}", name: "${repo.repo}") {
-                pullRequest(number: ${pullRequest.number}) {
-                    timelineItems(last: 100, itemTypes: [LABELED_EVENT]) {
-                        totalCount
-                        edges {
-                            node {
-                                __typename
-                                ... on LabeledEvent {
-                                    createdAt
-                                    label {
-                                        name
-                                    }
-                                    actor {
-                                        login
-                                    }
-                                }
-                            }
-                        }
-                    }
-                 }
-            }
-        }`);
-
-        /** @type {LabelInfo[]} */
-        const labelsInfo = query.repository.pullRequest.timelineItems.edges || [];
+        const labelsInfo = previousArtifact.labels;
 
         // reducing the query to labels only
         const labeledByTheAction = labelsInfo.reduce((acc, labelInfo) => {
@@ -478,7 +484,7 @@ const PATH = '.';
         ignoreFiles,
         changedFiles,
         pullRequest,
-        level,
+        previousArtifact,
     }) => {
         const labels = await autoLabel({
             octokit,
@@ -486,6 +492,7 @@ const PATH = '.';
             labelFilename,
             changedFiles,
             pullRequest,
+            previousArtifact,
         });
         const reviewers = await assignReviewers({
             octokit,
@@ -493,7 +500,7 @@ const PATH = '.';
             ownersFilename,
             changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
             pullRequest,
-            level,
+            previousArtifact,
         });
 
         return {
@@ -554,7 +561,7 @@ const PATH = '.';
             ignoreFiles,
             changedFiles,
             pullRequest: pull_request,
-            level: previousArtifact.level,
+            previousArtifact,
         });
 
         core.info(JSON.stringify(handlerData));
@@ -582,8 +589,8 @@ const PATH = '.';
                 ownersFilename,
                 changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
                 pullRequest,
-                level: currentArtifact.level,
                 isComment: true,
+                previousArtifact,
             });
         }
     }
