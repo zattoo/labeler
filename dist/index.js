@@ -15934,17 +15934,17 @@ const DEFAULT_ARTIFACT = {
     const pullRequestHandler = async ({
         changedFiles,
         pullRequest,
-        artifact,
+        artifactData,
     }) => {
         const labels = await autoLabel({
             changedFiles,
             pullRequest,
-            artifact,
+            artifactData,
         });
         const reviewers = await assignReviewers({
             changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
             pullRequest,
-            artifact,
+            artifactData,
         });
 
         return {
