@@ -408,21 +408,22 @@ const DEFAULT_ARTIFACT = {
         core.info(JSON.stringify(artifactData));
     }
 
-    if (comment) {
+    if (comment && comment.body.includes(MESSAGE_PREFIX_NEXT) || comment.body.includes(MESSAGE_PREFIX_PREVIOUS)) {
         const message = comment.body;
         core.info(JSON.stringify(comment));
 
-        if (message.includes(MESSAGE_PREFIX_NEXT) || message.includes(MESSAGE_PREFIX_PREVIOUS)) {
-
-            artifactData.level = artifactData.level + (message.includes(MESSAGE_PREFIX_NEXT) ? 1 : -1);
-
-            artifactData.reviewers = await assignReviewers({
-                changedFiles,
-                pullRequest,
-                isComment: true,
-                artifactData,
-            });
+        if (message.includes(MESSAGE_PREFIX_PREVIOUS) && artifactData.level > 0) {
+            artifactData.level--;
+        } else if (message.includes(MESSAGE_PREFIX_NEXT)) {
+            artifactData.level++;
         }
+
+        artifactData.reviewers = await assignReviewers({
+            changedFiles,
+            pullRequest,
+            isComment: true,
+            artifactData,
+        });
     }
 
     await uploadArtifact(artifactData);
