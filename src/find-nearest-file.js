@@ -23,7 +23,7 @@ const nextLevelUp = (directory) => {
  * @param {string} directory
  * @param {number} level
  */
-const findFile = async (filename, directory, level) => {
+const findFile = async (filename, directory, level = 0) => {
     if (!directory) {
         return null;
     }
@@ -35,7 +35,7 @@ const findFile = async (filename, directory, level) => {
         const fileExists = await fse.pathExists(file);
 
         if (fileExists) {
-            return (level === 0 || !nextDirectory)
+            return (level === 0)
                 ? file
                 : await findFile(filename, nextDirectory, level-1);
         }
