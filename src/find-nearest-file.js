@@ -29,21 +29,21 @@ const findFile = async (filename, directory, level) => {
     }
 
     const file = path.join(directory, filename);
-    console.log(file);
+    const nextDirectory = nextLevelUp(directory);
 
     try {
         const fileExists = await fse.pathExists(file);
         console.log(`${file}: ${fileExists}`);
 
         if (fileExists) {
-            return level === 0 || !nextLevelUp(directory)
+            return (level === 0 || !nextDirectory)
                 ? file
-                : await findFile(filename, nextLevelUp(directory), level-1);
+                : await findFile(filename, nextDirectory, level-1);
         }
 
-        return await findFile(filename, nextLevelUp(directory), level);
+        return await findFile(filename, nextDirectory, level);
     } catch (e) {
-        return await findFile(filename, nextLevelUp(directory), level);
+        return await findFile(filename, nextDirectory, level);
     }
 };
 
