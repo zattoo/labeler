@@ -15703,7 +15703,7 @@ const DEFAULT_ARTIFACT = {
 
         // Read
         const artifactData = await fse.readJSON(`${PATH}/${ARTIFACT_NAME}.json`);
-        core.info(`artifact data: ${artifactData}`);
+        core.info(`artifact data: ${JSON.stringify(artifactData)}`);
         return artifactData;
     };
 
@@ -15763,7 +15763,7 @@ const DEFAULT_ARTIFACT = {
         changedFiles,
         pullRequest,
         isComment,
-        artifact,
+        artifactData,
     }) => {
         core.startGroup('Reviewers');
         core.info(`files: ${changedFiles}`);
@@ -15788,7 +15788,7 @@ const DEFAULT_ARTIFACT = {
         core.info('now reviewers info');
 
         // get reviewers
-        let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename, artifact.level);
+        let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename, artifactData.level);
 
         if (!reviewersFiles.length <= 0) {
             core.info('assigning the repo Owners');
@@ -15807,7 +15807,7 @@ const DEFAULT_ARTIFACT = {
 
         const reviewersFromFiles = await utils.getMetaInfoFromFiles(reviewersFiles);
 
-        const reviewersToRemove = artifact.reviewers.filter((reviewer) => {
+        const reviewersToRemove = artifactData.reviewers.filter((reviewer) => {
             return !reviewersFromFiles.includes(reviewer);
         });
 
@@ -15816,7 +15816,7 @@ const DEFAULT_ARTIFACT = {
         });
 
         core.info(`Reviewers assigned to pull-request: ${reviewersOnPr}`);
-        core.info(`Reviewers which were assigned by the action: ${artifact.reviewers}`);
+        core.info(`Reviewers which were assigned by the action: ${artifactData.reviewers}`);
         core.info(`Reviewers to remove: ${reviewersToRemove}`);
         core.info(`Reviewers to add: ${reviewersToAdd}`);
 
@@ -15863,7 +15863,7 @@ const DEFAULT_ARTIFACT = {
     const autoLabel = async ({
         changedFiles,
         pullRequest,
-        artifact,
+        artifactData,
     }) => {
         core.startGroup('Auto label');
         const {repo} = context;
@@ -15878,7 +15878,7 @@ const DEFAULT_ARTIFACT = {
             }
         });
 
-        const labeledByTheAction = artifact.labels;
+        const labeledByTheAction = artifactData.labels;
 
         // get labels
         const labelsFiles = await utils.getMetaFiles(changedFiles, labelFilename, 0);
@@ -15971,33 +15971,31 @@ const DEFAULT_ARTIFACT = {
     const pullRequest = pull_request || issue;
 
     /** @type {[string[], ArtifactData]} */
-    let [changedFiles, artifact] = await Promise.all([
+    let [changedFiles, artifactData] = await Promise.all([
         getChangedFiles(pullRequest.number),
         getArtifact(),
     ]);
 
-    core.info(`previous Artifact ${JSON.stringify(artifact)}`);
-
-    artifact = {
+    artifactData = {
         ...DEFAULT_ARTIFACT,
-        ...artifact
+        ...artifactData
     };
 
     if (pull_request) {
         const handlerData = await pullRequestHandler({
             changedFiles,
             pullRequest,
-            artifact,
+            artifactData,
         });
 
         core.info(JSON.stringify(handlerData));
 
-        artifact = {
-            ...artifact,
+        artifactData = {
+            ...artifactData,
             ...handlerData
         }
 
-        core.info(JSON.stringify(artifact));
+        core.info(JSON.stringify(artifactData));
     }
 
     if (comment) {
@@ -16005,13 +16003,13 @@ const DEFAULT_ARTIFACT = {
 
         if (message.includes(MESSAGE_PREFIX_NEXT) || message.includes(MESSAGE_PREFIX_PREVIOUS)) {
 
-            artifact.level = artifact.level + (message.includes(MESSAGE_PREFIX_NEXT) ? 1 : -1);
+            artifactData.level = artifactData.level + (message.includes(MESSAGE_PREFIX_NEXT) ? 1 : -1);
 
-            artifact.reviewers = await assignReviewers({
+            artifactData.reviewers = await assignReviewers({
                 changedFiles,
                 pullRequest,
                 isComment: true,
-                artifact,
+                artifactData,
             });
         }
     }
@@ -16026,7 +16024,7 @@ const DEFAULT_ARTIFACT = {
  * @typedef {Object} PullRequestHandlerData
  * @prop {string[]} changedFiles
  * @prop {PullRequest} pullRequest
- * @prop {ArtifactData} artifact
+ * @prop {ArtifactData} artifactData
  * @prop {boolean} [isComment]
  */
 
