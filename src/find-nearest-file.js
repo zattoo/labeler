@@ -38,7 +38,7 @@ const findFile = async (filename, directory, level) => {
         if (fileExists) {
             return level === 0
                 ? file
-                : await findFile(filename, nextLevelUp(directory), level--);
+                : await findFile(filename, nextLevelUp(directory), level-1);
         }
 
         return await findFile(filename, nextLevelUp(directory), level);
