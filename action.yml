@@ -16,7 +16,7 @@ inputs:
   token:
     description: 'GitHub token'
     required: true
-  branch_name:
+  branch:
     description: 'Name of the Branch'
     required: true
 runs:

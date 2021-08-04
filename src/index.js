@@ -30,7 +30,7 @@ const DEFAULT_ARTIFACT = {
     const labelFilename = core.getInput('label_filename', {required: true});
     const ownersFilename = core.getInput('owners_filename', {required: true});
     const ignoreFiles = core.getMultilineInput('ignore_files', {required: true});
-    const branch_name = core.getInput('branch_name', {required: true});
+    const branch = core.getInput('branch', {required: true});
     let workflowFilename = core.getInput('workflow_filename', {required: true}).split('/');
     workflowFilename = workflowFilename[workflowFilename.length - 1];
 
@@ -60,7 +60,7 @@ const DEFAULT_ARTIFACT = {
             workflowRunsList = (await octokit.rest.actions.listWorkflowRuns({
                 ...repo,
                 workflow_id: workflowFilename,
-                branch: branch_name,
+                branch,
             })).data.workflow_runs.filter((run) => {
                 return run.conclusion === 'success'
             });
