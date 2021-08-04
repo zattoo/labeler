@@ -15441,7 +15441,7 @@ const findFile = async (filename, directory, level) => {
         console.log(`${file}: ${fileExists}`);
 
         if (fileExists) {
-            return level === 0
+            return level === 0 || !nextLevelUp(directory)
                 ? file
                 : await findFile(filename, nextLevelUp(directory), level-1);
         }
