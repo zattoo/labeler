@@ -15750,6 +15750,7 @@ const DEFAULT_ARTIFACT = {
             core.info(` - ${file.filename}`);
         });
 
+        core.info(listFilesResponse, ignoreFiles);
         return utils.filterChangedFiles(listFilesResponse, ignoreFiles)
     };
 
