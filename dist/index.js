@@ -15889,7 +15889,7 @@ const PATH = '.';
             }))
         }
 
-        if (reviewersToAdd.length > 0) {
+        if (reviewersToAdd.length > 0 || reviewersToRemove.length > 0) {
             queue.push(octokit.rest.pulls.requestReviewers({
                 ...repo,
                 pull_number: pullRequest.number,
