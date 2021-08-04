@@ -15438,7 +15438,6 @@ const findFile = async (filename, directory, level) => {
 
     try {
         const fileExists = await fse.pathExists(file);
-        console.log(`${file}: ${fileExists}`);
 
         if (fileExists) {
             return (level === 0 || !nextDirectory)
@@ -15961,7 +15960,10 @@ const DEFAULT_ARTIFACT = {
     core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
 
     core.info(JSON.stringify(artifactData));
-    artifactData = artifactData || DEFAULT_ARTIFACT;
+    artifactData = {
+        ...artifactData,
+        ...DEFAULT_ARTIFACT
+    };
 
     core.info(`artifact: ${JSON.stringify(artifactData)}`);
 
