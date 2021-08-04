@@ -15737,7 +15737,7 @@ const DEFAULT_ARTIFACT = {
     };
 
     /**
-     * @param {AssignReviewersData} data
+     * @param {PullRequestHandlerData} data
      * @returns {Promise<string[]>}
      */
     const assignReviewers = async ({
@@ -15814,7 +15814,7 @@ const DEFAULT_ARTIFACT = {
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
                 issue_number: pullRequest.number,
-                body: `Found ${reviewersFiles.length} filenames matching: \`${ownersFilename}\` pattern!\n${filesText}`,
+                body: `Assignee level: ${artifactData.level}\n Found ${reviewersFiles.length} filenames matching: \`${ownersFilename}\` pattern!\n${filesText}`,
             }));
         }
 
