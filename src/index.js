@@ -211,8 +211,6 @@ const DEFAULT_ARTIFACT = {
             });
         }
 
-        core.info('now reviewers info');
-
         // get reviewers
         let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename, artifactData.level);
 
@@ -396,10 +394,9 @@ const DEFAULT_ARTIFACT = {
 
     core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
 
-    artifactData = {
-        ...DEFAULT_ARTIFACT,
-        ...artifactData
-    };
+    artifactData = artifactData || DEFAULT_ARTIFACT;
+
+    core.info(`artifact: ${artifactData}`);
 
     if (pull_request) {
         const handlerData = await pullRequestHandler({
