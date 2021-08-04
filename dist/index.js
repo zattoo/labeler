@@ -15977,9 +15977,13 @@ const DEFAULT_ARTIFACT = {
         const message = comment.body;
         core.info(JSON.stringify(comment));
 
-        if (message.includes(MESSAGE_PREFIX_PREVIOUS) && artifactData.level > 0) {
-            artifactData.level--;
-        } else if (message.includes(MESSAGE_PREFIX_NEXT)) {
+        if (message.includes(MESSAGE_PREFIX_PREVIOUS)) {
+            if (artifactData.level > 0) {
+                artifactData.level--;
+            } else {
+                artifactData.level = 0;
+            }
+        } else {
             artifactData.level++;
         }
 
