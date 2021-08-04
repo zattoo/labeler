@@ -15596,8 +15596,11 @@ const DEFAULT_ARTIFACT = {
     const labelFilename = core.getInput('label_filename', {required: true});
     const ownersFilename = core.getInput('owners_filename', {required: true});
     const ignoreFiles = core.getMultilineInput('ignore_files', {required: true});
+    const branch = core.getInput('branch', {required: true});
     let workflowFilename = core.getInput('workflow_filename', {required: true}).split('/');
     workflowFilename = workflowFilename[workflowFilename.length - 1];
+
+    core.info(branch);
 
     const octokit = getOctokit(github_token);
 
@@ -15606,12 +15609,9 @@ const DEFAULT_ARTIFACT = {
      */
     const getArtifact = async () => {
         const {repo} = context;
-        core.info(`ref: ${context.ref}`);
 
         // https://docs.github.com/en/actions/reference/environment-variables
         const workflowName = process.env.GITHUB_WORKFLOW;
-        const branch = process.env.GITHUB_HEAD_REF;
-        core.info(`Branch : ${branch}`);
 
         const workflowsResponse = await octokit.rest.actions.listRepoWorkflows({
             ...repo,
@@ -15649,8 +15649,6 @@ const DEFAULT_ARTIFACT = {
         const latestRun = workflowRunsList.reduce((current, next) => {
            return new Date(current.created_at) > new Date(next.created_at) ? current : next;
         });
-
-        core.info(`latest successful run: ${JSON.stringify(latestRun)}`);
 
         const artifactsList = (await octokit.rest.actions.listWorkflowRunArtifacts({
             ...repo,

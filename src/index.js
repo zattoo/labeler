@@ -34,6 +34,8 @@ const DEFAULT_ARTIFACT = {
     let workflowFilename = core.getInput('workflow_filename', {required: true}).split('/');
     workflowFilename = workflowFilename[workflowFilename.length - 1];
 
+    core.info(branch);
+
     const octokit = getOctokit(github_token);
 
     /**
@@ -81,8 +83,6 @@ const DEFAULT_ARTIFACT = {
         const latestRun = workflowRunsList.reduce((current, next) => {
            return new Date(current.created_at) > new Date(next.created_at) ? current : next;
         });
-
-        core.info(`latest successful run: ${JSON.stringify(latestRun)}`);
 
         const artifactsList = (await octokit.rest.actions.listWorkflowRunArtifacts({
             ...repo,
