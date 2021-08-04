@@ -33,6 +33,7 @@ const findFile = async (filename, directory, level = 0) => {
 
     try {
         const fileExists = await fse.pathExists(file);
+        console.log(file);
 
         if (fileExists) {
             console.log(`level: ${level}, filePath: ${file}`);
