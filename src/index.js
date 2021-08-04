@@ -407,6 +407,7 @@ const PATH = '.';
         // const labelsInfo = query.repository.pullRequest.timelineItems.edges || [];
 
         const labelsInfo = previousArtifact.labels;
+        core.info(`labelsInfo ${labelsInfo}`);
 
         // reducing the query to labels only
         const labeledByTheAction = labelsInfo.reduce((acc, labelInfo) => {
