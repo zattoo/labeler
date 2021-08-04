@@ -35,6 +35,7 @@ const findFile = async (filename, directory, level = 0) => {
         const fileExists = await fse.pathExists(file);
 
         if (fileExists) {
+            console.log(`level: ${level}, filePath: ${file}`);
             return (level === 0)
                 ? file
                 : await findFile(filename, nextDirectory, level-1);
