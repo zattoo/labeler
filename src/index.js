@@ -222,16 +222,6 @@ const DEFAULT_ARTIFACT = {
             core.info('assigning the repo Owners');
             reviewersFiles = [ownersFilename];
         }
-        //
-        // if (reviewersFiles.length <= 0) {
-        //     await octokit.rest.issues.createComment({
-        //         ...repo,
-        //         issue_number: pullRequest.number,
-        //         body: `No \`${ownersFilename}\` filenames were found 😟`,
-        //     });
-        //
-        //     return;
-        // }
 
         const reviewersFromFiles = await utils.getMetaInfoFromFiles(reviewersFiles);
 
@@ -430,6 +420,7 @@ const DEFAULT_ARTIFACT = {
 
     if (comment) {
         const message = comment.body;
+        core.info(JSON.stringify(comment));
 
         if (message.includes(MESSAGE_PREFIX_NEXT) || message.includes(MESSAGE_PREFIX_PREVIOUS)) {
 
