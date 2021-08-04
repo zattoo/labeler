@@ -15743,15 +15743,9 @@ const DEFAULT_ARTIFACT = {
             core.info(` - ${file.filename}`);
 
             // @see https://docs.github.com/en/actions/reference/environment-variables
-            return file.filename;
-            // return path.join(process.env.GITHUB_WORKSPACE, file.filename);
+            return path.join(process.env.GITHUB_WORKSPACE, file.filename);
         });
-        //
-        // listFilesResponse.forEach((file) => {
-        //     core.info(` - ${file.filename}`);
-        // });
 
-        // core.info(JSON.stringify(listFilesResponse));
         return utils.filterChangedFiles(changedFiles, ignoreFiles)
     };
 
@@ -15839,7 +15833,9 @@ const DEFAULT_ARTIFACT = {
         }
 
         if (reviewersToAdd.length > 0 || reviewersToRemove.length > 0 || isComment) {
-            const filesText = reviewersFiles.map((file) => `* \`${file}\``).join('\n');
+            const filesText = reviewersFiles.map((file) => {
+                return `* \`${file.substr(process.env.GITHUB_WORKSPACE.length)}\``;
+            }).join('\n');
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
                 issue_number: pullRequest.number,
