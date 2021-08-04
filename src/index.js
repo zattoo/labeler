@@ -11,7 +11,6 @@ const {
 } = require('@actions/github');
 
 const utils = require('./get-meta-info');
-const reviewersLevels = require('./reveiwers-levels');
 
 const MESSAGE_PREFIX_NEXT = '#Assign next';
 const MESSAGE_PREFIX_PREVIOUS = '#Assign previous';
@@ -211,7 +210,6 @@ const PATH = '.';
      */
     const assignReviewers = async ({
         octokit,
-        user,
         ownersFilename,
         changedFiles,
         pullRequest,
@@ -377,54 +375,9 @@ const PATH = '.';
                 return label.name;
             }
         });
-        //
-        // // get the labels history on the pull-request
-        // const query = await octokit.graphql(`{
-        //     repository(owner: "${repo.owner}", name: "${repo.repo}") {
-        //         pullRequest(number: ${pullRequest.number}) {
-        //             timelineItems(last: 100, itemTypes: [LABELED_EVENT]) {
-        //                 totalCount
-        //                 edges {
-        //                     node {
-        //                         __typename
-        //                         ... on LabeledEvent {
-        //                             createdAt
-        //                             label {
-        //                                 name
-        //                             }
-        //                             actor {
-        //                                 login
-        //                             }
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //          }
-        //     }
-        // }`);
-        //
-        // /** @type {LabelInfo[]} */
-        // const labelsInfo = query.repository.pullRequest.timelineItems.edges || [];
 
-        const labelsInfo = previousArtifact.labels;
-        core.info(`labelsInfo ${labelsInfo}`);
-
-        // reducing the query to labels only
-        const labeledByTheAction = labelsInfo.reduce((acc, labelInfo) => {
-            const {name} = labelInfo.node.label;
-
-            // If not included already, match github-actions actor and is currently used on the pull-request
-            if (
-                !acc.includes(name) &&
-                labelInfo.node.actor.login === user &&
-                labelsOnPr.includes(name)
-            ) {
-                acc.push(name);
-            }
-
-            return acc;
-        }, []);
-
+        const labeledByTheAction = previousArtifact.labels;
+        core.info(`artifact ${JSON.stringify(previousArtifact)}`);
 
         // get labels
         const labelsFiles = await utils.getMetaFiles(changedFiles, labelFilename, 0);

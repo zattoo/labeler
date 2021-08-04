@@ -15583,7 +15583,6 @@ const {
 } = __nccwpck_require__(5438);
 
 const utils = __nccwpck_require__(6742);
-const reviewersLevels = __nccwpck_require__(5362);
 
 const MESSAGE_PREFIX_NEXT = '#Assign next';
 const MESSAGE_PREFIX_PREVIOUS = '#Assign previous';
@@ -15783,7 +15782,6 @@ const PATH = '.';
      */
     const assignReviewers = async ({
         octokit,
-        user,
         ownersFilename,
         changedFiles,
         pullRequest,
@@ -15978,23 +15976,24 @@ const PATH = '.';
         // /** @type {LabelInfo[]} */
         // const labelsInfo = query.repository.pullRequest.timelineItems.edges || [];
 
-        const labelsInfo = previousArtifact.labels;
+        const labeledByTheAction = previousArtifact.labels;
+        core.info(`artifact ${JSON.stringify(previousArtifact)}`);
 
         // reducing the query to labels only
-        const labeledByTheAction = labelsInfo.reduce((acc, labelInfo) => {
-            const {name} = labelInfo.node.label;
-
-            // If not included already, match github-actions actor and is currently used on the pull-request
-            if (
-                !acc.includes(name) &&
-                labelInfo.node.actor.login === user &&
-                labelsOnPr.includes(name)
-            ) {
-                acc.push(name);
-            }
-
-            return acc;
-        }, []);
+        // const labeledByTheAction = labelsInfo.reduce((acc, labelInfo) => {
+        //     const {name} = labelInfo.node.label;
+        //
+        //     // If not included already, match github-actions actor and is currently used on the pull-request
+        //     if (
+        //         !acc.includes(name) &&
+        //         labelInfo.node.actor.login === user &&
+        //         labelsOnPr.includes(name)
+        //     ) {
+        //         acc.push(name);
+        //     }
+        //
+        //     return acc;
+        // }, []);
 
 
         // get labels
@@ -16246,22 +16245,6 @@ const PATH = '.';
  * @prop {Record<string, string[]>} [ownerFilesReviewersMap]
  * @prop {number} level
  */
-
-
-/***/ }),
-
-/***/ 5362:
-/***/ ((module) => {
-
-const OWNER = 'owner';
-const PROJECT = 'project';
-const REPO = 'repo';
-
-module.exports = {
-    OWNER,
-    PROJECT,
-    REPO
-};
 
 
 /***/ }),
