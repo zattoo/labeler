@@ -425,6 +425,7 @@ const DEFAULT_ARTIFACT = {
         }
     }
 
+    core.info(`final artifact: ${JSON.stringify(artifactData)}`);
 
     await uploadArtifact(artifactData);
 })().catch((error) => {

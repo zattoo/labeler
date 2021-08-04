@@ -15990,8 +15990,9 @@ const DEFAULT_ARTIFACT = {
         }
     }
 
+    core.info(`final artifact: ${JSON.stringify(artifactData)}`);
 
-    await uploadArtifact(artifact);
+    await uploadArtifact(artifactData);
 })().catch((error) => {
     core.setFailed(error);
     process.exit(1);
