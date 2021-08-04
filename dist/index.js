@@ -15962,7 +15962,7 @@ const DEFAULT_ARTIFACT = {
 
     artifactData = artifactData || DEFAULT_ARTIFACT;
 
-    core.info(`artifact: ${artifactData}`);
+    core.info(`artifact: ${JSON.stringify(artifactData)}`);
 
     if (pull_request) {
         const handlerData = await pullRequestHandler({
