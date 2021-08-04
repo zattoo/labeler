@@ -15438,7 +15438,6 @@ const findFile = async (filename, directory, level = 0) => {
 
     try {
         const fileExists = await fse.pathExists(file);
-        console.log(file);
 
         if (fileExists) {
             console.log(`level: ${level}, filePath: ${file}`);
@@ -15770,6 +15769,7 @@ const DEFAULT_ARTIFACT = {
 
         // get reviewers
         let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename, artifactData.level);
+        core.info(reviewersFiles);
 
         if (!reviewersFiles.length <= 0) {
             core.info('assigning the repo Owners');

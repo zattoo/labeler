@@ -203,6 +203,7 @@ const DEFAULT_ARTIFACT = {
 
         // get reviewers
         let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename, artifactData.level);
+        core.info(reviewersFiles);
 
         if (!reviewersFiles.length <= 0) {
             core.info('assigning the repo Owners');
