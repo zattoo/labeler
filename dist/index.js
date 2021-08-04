@@ -15962,6 +15962,8 @@ const DEFAULT_ARTIFACT = {
         getArtifact(),
     ]);
 
+    core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
+
     artifactData = {
         ...DEFAULT_ARTIFACT,
         ...artifactData

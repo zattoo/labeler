@@ -30,6 +30,7 @@ const DEFAULT_ARTIFACT = {
     const labelFilename = core.getInput('label_filename', {required: true});
     const ownersFilename = core.getInput('owners_filename', {required: true});
     const ignoreFiles = core.getMultilineInput('ignore_files', {required: true});
+    const branch_name = core.getInput('branch_name', {required: true});
     let workflowFilename = core.getInput('workflow_filename', {required: true}).split('/');
     workflowFilename = workflowFilename[workflowFilename.length - 1];
 
@@ -40,12 +41,9 @@ const DEFAULT_ARTIFACT = {
      */
     const getArtifact = async () => {
         const {repo} = context;
-        core.info(`ref: ${context.ref}`);
 
         // https://docs.github.com/en/actions/reference/environment-variables
         const workflowName = process.env.GITHUB_WORKFLOW;
-        const branch = process.env.GITHUB_HEAD_REF;
-        core.info(`Branch : ${branch}`);
 
         const workflowsResponse = await octokit.rest.actions.listRepoWorkflows({
             ...repo,
@@ -62,7 +60,7 @@ const DEFAULT_ARTIFACT = {
             workflowRunsList = (await octokit.rest.actions.listWorkflowRuns({
                 ...repo,
                 workflow_id: workflowFilename,
-                branch,
+                branch: branch_name,
             })).data.workflow_runs.filter((run) => {
                 return run.conclusion === 'success'
             });
@@ -395,6 +393,8 @@ const DEFAULT_ARTIFACT = {
         getChangedFiles(pullRequest.number),
         getArtifact(),
     ]);
+
+    core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
 
     artifactData = {
         ...DEFAULT_ARTIFACT,

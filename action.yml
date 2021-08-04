@@ -16,6 +16,9 @@ inputs:
   token:
     description: 'GitHub token'
     required: true
+  branch_name:
+    description: 'Name of the Branch'
+    required: true
 runs:
   using: 'node12'
   main: 'dist/index.js'
