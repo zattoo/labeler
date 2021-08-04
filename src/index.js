@@ -134,28 +134,18 @@ const DEFAULT_ARTIFACT = {
         core.info(`files list in ${PATH}: ${folderFiles}`);
 
         // Read
-        const artifactData = await fse.readJSON(`${PATH}/${ARTIFACT_NAME}.json`);
-        core.info(`artifact data: ${JSON.stringify(artifactData)}`);
-        return artifactData;
+        return await fse.readJSON(`${PATH}/${ARTIFACT_NAME}.json`);
     };
 
     /**
-     * @param {ArtifactData} artifactInfo
+     * @param {ArtifactData} artifactData
      * @returns {Promise<void>}
      */
-    const uploadArtifact = async (artifactInfo) => {
-        core.info('writing file');
-        await fse.writeJSON(`${PATH}/${ARTIFACT_NAME}.json`, artifactInfo);
-        core.info('wrote file');
-
+    const uploadArtifact = async (artifactData) => {
+        core.info(`uploading artifact: ${JSON.stringify(artifactData)}`);
+        await fse.writeJSON(`${PATH}/${ARTIFACT_NAME}.json`, artifactData);
         const artifactClient = artifact.create();
-
-        const folderFiles = await fse.readdir(PATH);
-        core.info(`files list in ${PATH}: ${folderFiles}`);
-
-        const uploadResponse = await artifactClient.uploadArtifact(ARTIFACT_NAME, [`${ARTIFACT_NAME}.json`], PATH, {continueOnError: false});
-
-        core.info(JSON.stringify(uploadResponse));
+        await artifactClient.uploadArtifact(ARTIFACT_NAME, [`${ARTIFACT_NAME}.json`], PATH, {continueOnError: false});
     };
 
     /**
@@ -394,7 +384,6 @@ const DEFAULT_ARTIFACT = {
 
     core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
 
-    core.info(JSON.stringify(artifactData));
     artifactData = {
         ...artifactData,
         ...DEFAULT_ARTIFACT
@@ -435,6 +424,7 @@ const DEFAULT_ARTIFACT = {
             });
         }
     }
+
 
     await uploadArtifact(artifact);
 })().catch((error) => {
