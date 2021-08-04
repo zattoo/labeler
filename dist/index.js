@@ -15809,7 +15809,7 @@ const DEFAULT_ARTIFACT = {
 
         if (reviewersToAdd.length > 0 || reviewersToRemove.length > 0 || isComment) {
             const filesText = reviewersFiles.map((file) => {
-                return `* \`${file.substr(process.env.GITHUB_WORKSPACE.length)}\``;
+                return `* \`${file}\``;
             }).join('\n');
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
