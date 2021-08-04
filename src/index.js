@@ -426,7 +426,7 @@ const DEFAULT_ARTIFACT = {
     }
 
 
-    await uploadArtifact(artifact);
+    await uploadArtifact(artifactData);
 })().catch((error) => {
     core.setFailed(error);
     process.exit(1);
