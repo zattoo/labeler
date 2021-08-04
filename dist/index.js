@@ -15782,6 +15782,7 @@ const PATH = '.';
         changedFiles,
         pullRequest,
         level,
+        isComment,
     }) => {
         core.startGroup('Reviewers');
         core.info(`files: ${changedFiles}`);
@@ -15889,13 +15890,15 @@ const PATH = '.';
             }))
         }
 
-        if (reviewersToAdd.length > 0 || reviewersToRemove.length > 0) {
+        if (reviewersToAdd.length > 0) {
             queue.push(octokit.rest.pulls.requestReviewers({
                 ...repo,
                 pull_number: pullRequest.number,
                 reviewers: reviewersToAdd,
             }));
+        }
 
+        if(reviewersToAdd.length > 0 || reviewersToRemove.length > 0 || isComment) {
             const filesText = reviewersFiles.map((file) => `* \`${file}\``).join('\n');
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
@@ -16146,6 +16149,7 @@ const PATH = '.';
                 changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
                 pullRequest,
                 level: currentArtifact.level,
+                isComment: true,
             });
         }
     }
