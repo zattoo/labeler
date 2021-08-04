@@ -30,7 +30,7 @@ const getMetaFiles = async (changedFiles, filename,level) => {
 
     const results = await Promise.all(queue);
 
-    return [...new Set(results)];
+    return [...new Set(results)].filter(Boolean);
 };
 
 /**
