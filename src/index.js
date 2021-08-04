@@ -173,19 +173,20 @@ const DEFAULT_ARTIFACT = {
         const listFilesResponse = await octokit.paginate(listFilesOptions);
 
         core.info("Changed files:");
-        // const changedFiles = listFilesResponse.map((file) => {
-        //     core.info(` - ${file.filename}`);
+        const changedFiles = listFilesResponse.map((file) => {
+            core.info(` - ${file.filename}`);
+
+            // @see https://docs.github.com/en/actions/reference/environment-variables
+            return file.filename;
+            // return path.join(process.env.GITHUB_WORKSPACE, file.filename);
+        });
         //
-        //     // @see https://docs.github.com/en/actions/reference/environment-variables
-        //     return path.join(process.env.GITHUB_WORKSPACE, file.filename);
+        // listFilesResponse.forEach((file) => {
+        //     core.info(` - ${file.filename}`);
         // });
 
-        listFilesResponse.forEach((file) => {
-            core.info(` - ${file.filename}`);
-        });
-
-        core.info(listFilesResponse, ignoreFiles);
-        return utils.filterChangedFiles(listFilesResponse, ignoreFiles)
+        // core.info(JSON.stringify(listFilesResponse));
+        return utils.filterChangedFiles(changedFiles, ignoreFiles)
     };
 
     /**
