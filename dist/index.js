@@ -15406,8 +15406,6 @@ function wrappy (fn, cb) {
 const path = __nccwpck_require__(5622);
 const fse = __nccwpck_require__(5630);
 
-let lastFile = '';
-
 /**
  *
  * @param {string} directory
@@ -15432,7 +15430,7 @@ const nextLevelUp = (directory) => {
  */
 const findFile = async (filename, directory, level) => {
     if (!directory) {
-        return lastFile;
+        return null;
     }
 
     const file = path.join(directory, filename);
@@ -15443,12 +15441,9 @@ const findFile = async (filename, directory, level) => {
         console.log(`${file}: ${fileExists}`);
 
         if (fileExists) {
-            if (level === 0) {
-                return file;
-            } else {
-                lastFile = file;
-                await findFile(filename, nextDirectory, level-1);
-            }
+            return (level === 0 || !nextDirectory)
+                ? file
+                : await findFile(filename, nextDirectory, level-1);
         }
 
         return await findFile(filename, nextDirectory, level);
@@ -15472,7 +15467,6 @@ const findNearestFile = async (filename, root, level) => {
         throw new Error('filename must be just a filename and not a path')
     }
 
-    lastFile = '';
     return await findFile(filename, root, level);
 };
 
@@ -15588,29 +15582,36 @@ const MESSAGE_PREFIX_NEXT = '#Assign next';
 const MESSAGE_PREFIX_PREVIOUS = '#Assign previous';
 const ARTIFACT_NAME = 'project-recognition';
 const PATH = '.';
+const ZIP_FILE_NAME = `${PATH}/${ARTIFACT_NAME}.zip`;
 
+/** @type {ArtifactData} */
+const DEFAULT_ARTIFACT = {
+    level: 0,
+    labels: [],
+    reviewers: [],
+};
 
 (async () => {
+    const github_token = core.getInput('token', {required: true});
+    const labelFilename = core.getInput('label_filename', {required: true});
+    const ownersFilename = core.getInput('owners_filename', {required: true});
+    const ignoreFiles = core.getMultilineInput('ignore_files', {required: true});
+    let workflowFilename = core.getInput('workflow_filename', {required: true}).split('/');
+    workflowFilename = workflowFilename[workflowFilename.length - 1];
+
+    const octokit = getOctokit(github_token);
+
     /**
-     * @param {InstanceType<typeof GitHub>} octokit
-     * @param {string} workflowFilename
-     * @param {string} github_token
      * @returns {Promise<ArtifactData>}
      */
-    const getArtifact = async (octokit, workflowFilename, github_token) => {
+    const getArtifact = async () => {
         const {repo} = context;
-
-        /** @type {ArtifactData} */
-        const DEFAULT_ARTIFACT = {
-            level: 0,
-            labels: [],
-            reviewers: [],
-        };
+        core.info(`ref: ${context.ref}`);
 
         // https://docs.github.com/en/actions/reference/environment-variables
         const workflowName = process.env.GITHUB_WORKFLOW;
-        // todo does it work for issues comment?
         const branch = process.env.GITHUB_HEAD_REF;
+        core.info(`Branch : ${branch}`);
 
         const workflowsResponse = await octokit.rest.actions.listRepoWorkflows({
             ...repo,
@@ -15633,12 +15634,12 @@ const PATH = '.';
             });
         } catch (e) {
             core.info('listWorkflowRuns not found')
-            return DEFAULT_ARTIFACT;
+            return null;
         }
 
         if (workflowRunsList.length === 0) {
             core.info(`There are no successful workflow runs for workflow id: ${currentWorkflow.id} on the branch: ${branch}`);
-            return DEFAULT_ARTIFACT;
+            return null;
         }
 
         core.info(`workflow runs list total count: ${workflowRunsList.length}`);
@@ -15662,7 +15663,7 @@ const PATH = '.';
 
         if (artifactsList.total_count === 0) {
             core.info(`There are no artifacts for run id: ${latestRun.id}`);
-            return DEFAULT_ARTIFACT;
+            return null;
         }
 
         const desiredArtifact = artifactsList.artifacts.find((artifactFile) => artifactFile.name === ARTIFACT_NAME);
@@ -15670,11 +15671,8 @@ const PATH = '.';
         if (!desiredArtifact) {
             core.info(`There are no artifacts with the name: ${ARTIFACT_NAME}`);
             core.info(`Other artifacts on the run are ${artifactsList.artifacts.map((artifactFile) => artifactFile.name)}`);
-            return DEFAULT_ARTIFACT;
+            return null;
         }
-
-
-        const ZIP_FILE_NAME = `${PATH}/${ARTIFACT_NAME}.zip`;
 
         // Download
         const res = await fetch(desiredArtifact.archive_download_url, {
@@ -15700,16 +15698,12 @@ const PATH = '.';
 
         // Extract
         await utils.execWithCatch(`unzip -o -q ${ZIP_FILE_NAME} -d ${PATH}`);
-
         const folderFiles = await fse.readdir(PATH);
-
         core.info(`files list in ${PATH}: ${folderFiles}`);
 
         // Read
         const artifactData = await fse.readJSON(`${PATH}/${ARTIFACT_NAME}.json`);
-
         core.info(`artifact data: ${artifactData}`);
-
         return artifactData;
     };
 
@@ -15733,47 +15727,30 @@ const PATH = '.';
     };
 
     /**
-     * @param {InstanceType<typeof GitHub>} octokit
      * @param {number} pull_number
      * @returns {string[]}
      */
-    const getChangedFiles = async (octokit, pull_number) => {
-        const {repo} = context;
+    const getChangedFiles = async (pull_number) => {
         const listFilesOptions = octokit.rest.pulls.listFiles.endpoint.merge({
-            ...repo,
+            ...context.repo,
             pull_number,
         });
 
         const listFilesResponse = await octokit.paginate(listFilesOptions);
 
         core.info("Changed files:");
-        const changedFiles = listFilesResponse.map((file) => {
-            core.info(` - ${file.filename}`);
+        // const changedFiles = listFilesResponse.map((file) => {
+        //     core.info(` - ${file.filename}`);
+        //
+        //     // @see https://docs.github.com/en/actions/reference/environment-variables
+        //     return path.join(process.env.GITHUB_WORKSPACE, file.filename);
+        // });
 
-            // @see https://docs.github.com/en/actions/reference/environment-variables
-            return path.join(process.env.GITHUB_WORKSPACE, file.filename);
+        listFilesResponse.forEach((file) => {
+            core.info(` - ${file.filename}`);
         });
 
-        return changedFiles;
-    };
-
-    /**
-     *  Get the user which the token belongs to
-     *  if no user found we fallback to 'github-actions'
-     * @param {InstanceType<typeof GitHub>} octokit
-     * @returns {string}
-     */
-    const getUser = async (octokit) => {
-        let user = 'github-actions';
-
-        try {
-            const auth = await octokit.rest.users.getAuthenticated();
-            user =  auth.data.login;
-        } catch (e) {
-            core.info('Failed to get the authenticated user will fallback to github-actions');
-        }
-
-        return user;
+        return utils.filterChangedFiles(listFilesResponse, ignoreFiles)
     };
 
     /**
@@ -15781,12 +15758,10 @@ const PATH = '.';
      * @returns {Promise<string[]>}
      */
     const assignReviewers = async ({
-        octokit,
-        ownersFilename,
         changedFiles,
         pullRequest,
         isComment,
-        previousArtifact,
+        artifact,
     }) => {
         core.startGroup('Reviewers');
         core.info(`files: ${changedFiles}`);
@@ -15808,73 +15783,29 @@ const PATH = '.';
             });
         }
 
-        // // get the reviewers request history on the pull-request
-        // const query = await octokit.graphql(`{
-        //     repository(owner: "${repo.owner}", name: "${repo.repo}") {
-        //         pullRequest(number: ${pullRequest.number}) {
-        //             timelineItems(last: 100, itemTypes: [REVIEW_REQUESTED_EVENT]) {
-        //                 totalCount
-        //                 edges {
-        //                     node {
-        //                         __typename
-        //                          ... on ReviewRequestedEvent {
-        //                             createdAt
-        //                             actor {
-        //                                 login
-        //                             }
-        //                             requestedReviewer {
-        //                                 ... on User {
-        //                                     login
-        //                                 }
-        //                             }
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }`);
-        //
-        // /** @type {ReviewerInfo[]} */
-        // const reviewersInfo = query.repository.pullRequest.timelineItems.edges || [];
-
         core.info('now reviewers info');
 
-        // reducing the query to labels only
-        // const assignedByTheAction = reviewersInfo.reduce((acc, reviewerEvent) => {
-        //     const {login} = reviewerEvent.node.requestedReviewer;
-        //
-        //     // If not included already, match github-actions actor and is currently used on the pull-request
-        //     if (
-        //         !acc.includes(login) &&
-        //         reviewerEvent.node.actor.login === user &&
-        //         reviewersOnPr.includes(login)
-        //     ) {
-        //         acc.push(login);
-        //     }
-        //
-        //     return acc;
-        // }, []);
-
-        const assignedByTheAction = previousArtifact.reviewers;
-
-
         // get reviewers
-        const reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename, previousArtifact.level);
+        let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename, artifact.level);
 
-        if (reviewersFiles.length <= 0) {
-            await octokit.rest.issues.createComment({
-                ...repo,
-                issue_number: pullRequest.number,
-                body: `No \`${ownersFilename}\` filenames were found 😟`,
-            });
-
-            return;
+        if (!reviewersFiles.length <= 0) {
+            core.info('assigning the repo Owners');
+            reviewersFiles = [ownersFilename];
         }
+        //
+        // if (reviewersFiles.length <= 0) {
+        //     await octokit.rest.issues.createComment({
+        //         ...repo,
+        //         issue_number: pullRequest.number,
+        //         body: `No \`${ownersFilename}\` filenames were found 😟`,
+        //     });
+        //
+        //     return;
+        // }
 
         const reviewersFromFiles = await utils.getMetaInfoFromFiles(reviewersFiles);
 
-        const reviewersToRemove = assignedByTheAction.filter((reviewer) => {
+        const reviewersToRemove = artifact.reviewers.filter((reviewer) => {
             return !reviewersFromFiles.includes(reviewer);
         });
 
@@ -15883,7 +15814,7 @@ const PATH = '.';
         });
 
         core.info(`Reviewers assigned to pull-request: ${reviewersOnPr}`);
-        core.info(`Reviewers which were assigned by the action: ${assignedByTheAction}`);
+        core.info(`Reviewers which were assigned by the action: ${artifact.reviewers}`);
         core.info(`Reviewers to remove: ${reviewersToRemove}`);
         core.info(`Reviewers to add: ${reviewersToAdd}`);
 
@@ -15905,7 +15836,7 @@ const PATH = '.';
             }));
         }
 
-        if(reviewersToAdd.length > 0 || reviewersToRemove.length > 0 || isComment) {
+        if (reviewersToAdd.length > 0 || reviewersToRemove.length > 0 || isComment) {
             const filesText = reviewersFiles.map((file) => `* \`${file}\``).join('\n');
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
@@ -15928,12 +15859,9 @@ const PATH = '.';
      * @returns {Promise<string[]>}
      */
     const autoLabel = async ({
-        octokit,
-        user,
-        labelFilename,
         changedFiles,
         pullRequest,
-        previousArtifact,
+        artifact,
     }) => {
         core.startGroup('Auto label');
         const {repo} = context;
@@ -15947,54 +15875,8 @@ const PATH = '.';
                 return label.name;
             }
         });
-        //
-        // // get the labels history on the pull-request
-        // const query = await octokit.graphql(`{
-        //     repository(owner: "${repo.owner}", name: "${repo.repo}") {
-        //         pullRequest(number: ${pullRequest.number}) {
-        //             timelineItems(last: 100, itemTypes: [LABELED_EVENT]) {
-        //                 totalCount
-        //                 edges {
-        //                     node {
-        //                         __typename
-        //                         ... on LabeledEvent {
-        //                             createdAt
-        //                             label {
-        //                                 name
-        //                             }
-        //                             actor {
-        //                                 login
-        //                             }
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //          }
-        //     }
-        // }`);
-        //
-        // /** @type {LabelInfo[]} */
-        // const labelsInfo = query.repository.pullRequest.timelineItems.edges || [];
 
-        const labeledByTheAction = previousArtifact.labels;
-        core.info(`artifact ${JSON.stringify(previousArtifact)}`);
-
-        // reducing the query to labels only
-        // const labeledByTheAction = labelsInfo.reduce((acc, labelInfo) => {
-        //     const {name} = labelInfo.node.label;
-        //
-        //     // If not included already, match github-actions actor and is currently used on the pull-request
-        //     if (
-        //         !acc.includes(name) &&
-        //         labelInfo.node.actor.login === user &&
-        //         labelsOnPr.includes(name)
-        //     ) {
-        //         acc.push(name);
-        //     }
-        //
-        //     return acc;
-        // }, []);
-
+        const labeledByTheAction = artifact.labels;
 
         // get labels
         const labelsFiles = await utils.getMetaFiles(changedFiles, labelFilename, 0);
@@ -16048,30 +15930,19 @@ const PATH = '.';
      * @param {PullRequestHandlerData} data
      */
     const pullRequestHandler = async ({
-        octokit,
-        user,
-        labelFilename,
-        ownersFilename,
-        ignoreFiles,
         changedFiles,
         pullRequest,
-        previousArtifact,
+        artifact,
     }) => {
         const labels = await autoLabel({
-            octokit,
-            user,
-            labelFilename,
             changedFiles,
             pullRequest,
-            previousArtifact,
+            artifact,
         });
         const reviewers = await assignReviewers({
-            octokit,
-            user,
-            ownersFilename,
             changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
             pullRequest,
-            previousArtifact,
+            artifact,
         });
 
         return {
@@ -16079,15 +15950,6 @@ const PATH = '.';
             reviewers,
         }
     };
-
-    const github_token = core.getInput('token', {required: true});
-    const labelFilename = core.getInput('label_filename', {required: true});
-    const ownersFilename = core.getInput('owners_filename', {required: true});
-    const ignoreFiles = core.getMultilineInput('ignore_files', {required: true});
-    let workflowFilename = core.getInput('workflow_filename', {required: true}).split('/');
-    workflowFilename = workflowFilename[workflowFilename.length - 1];
-
-    const octokit = getOctokit(github_token);
 
     core.startGroup('Debug');
     core.info(Object.keys(context.payload).toString());
@@ -16106,67 +15968,53 @@ const PATH = '.';
 
     const pullRequest = pull_request || issue;
 
-    const [changedFiles, user, previousArtifact] = await Promise.all([
-        getChangedFiles(octokit, pullRequest.number),
-        getUser(octokit),
-        getArtifact(octokit, workflowFilename, github_token),
+    /** @type {[string[], ArtifactData]} */
+    let [changedFiles, artifact] = await Promise.all([
+        getChangedFiles(pullRequest.number),
+        getArtifact(),
     ]);
 
-    core.info(`previous Artifact ${JSON.stringify(previousArtifact)}`);
+    core.info(`previous Artifact ${JSON.stringify(artifact)}`);
 
-    /** @type {ArtifactData} */
-    let currentArtifact = {
-        level: 0,
-        labels: [],
-        reviewers: [],
+    artifact = {
+        ...DEFAULT_ARTIFACT,
+        ...artifact
     };
-
-    core.info(`Token user: ${user}`);
 
     if (pull_request) {
         const handlerData = await pullRequestHandler({
-            octokit,
-            user,
-            labelFilename,
-            ownersFilename,
-            ignoreFiles,
             changedFiles,
-            pullRequest: pull_request,
-            previousArtifact,
+            pullRequest,
+            artifact,
         });
 
         core.info(JSON.stringify(handlerData));
 
-        currentArtifact = {
-            ...currentArtifact,
+        artifact = {
+            ...artifact,
             ...handlerData
         }
 
-        core.info(JSON.stringify(currentArtifact));
+        core.info(JSON.stringify(artifact));
     }
 
     if (comment) {
-        core.info('me here yeay');
         const message = comment.body;
-
-        currentArtifact.labels = previousArtifact.labels;
 
         if (message.includes(MESSAGE_PREFIX_NEXT) || message.includes(MESSAGE_PREFIX_PREVIOUS)) {
 
-            currentArtifact.level = previousArtifact.level + (message.includes(MESSAGE_PREFIX_NEXT) ? 1 : -1);
-            currentArtifact.reviewers = await assignReviewers({
-                octokit,
-                user,
-                ownersFilename,
-                changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
+            artifact.level = artifact.level + (message.includes(MESSAGE_PREFIX_NEXT) ? 1 : -1);
+
+            artifact.reviewers = await assignReviewers({
+                changedFiles,
                 pullRequest,
                 isComment: true,
-                previousArtifact,
+                artifact,
             });
         }
     }
 
-    await uploadArtifact(currentArtifact);
+    await uploadArtifact(artifact);
 })().catch((error) => {
     core.setFailed(error);
     process.exit(1);
@@ -16174,57 +16022,10 @@ const PATH = '.';
 
 /**
  * @typedef {Object} PullRequestHandlerData
- * @prop {InstanceType<typeof GitHub>} octokit
  * @prop {string[]} changedFiles
- * @prop {string} user
- * @prop {string} labelFilename
- * @prop {string} ownersFilename
- * @prop {string[]} ignoreFiles
  * @prop {PullRequest} pullRequest
- */
-
-/**
- * @typedef {Omit<PullRequestHandlerData, 'ownersFilename' | 'ignoreFiles'>} AutoLabelData
- */
-
-/**
- * @typedef {Omit<PullRequestHandlerData, 'ignoreFiles'>} AssignReviewersData
- */
-
-/**
- * @typedef {Object} ReviewerInfo
- * @prop {ReviewerNode} node
- */
-
-/**
- * @typedef {Object} ReviewerNode
- * @prop {string} __typename
- * @prop {string} createdAt
- * @prop {Actor} actor
- * @prop {Actor} requestedReviewer
- */
-
-/**
- * @typedef {Object} LabelInfo
- * @prop {LabelNode} node
- */
-
-/**
- * @typedef {Object} LabelNode
- * @prop {string} __typename
- * @prop {string} createdAt
- * @prop {Label} label
- * @prop {Actor} actor
- */
-
-/**
- * @typedef {Object} Actor
- * @prop {string} login
- */
-
-/**
- * @typedef {Object} Label
- * @prop {string} name
+ * @prop {ArtifactData} artifact
+ * @prop {boolean} [isComment]
  */
 
 /**

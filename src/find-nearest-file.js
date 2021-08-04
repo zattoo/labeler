@@ -1,8 +1,6 @@
 const path = require('path');
 const fse = require('fs-extra');
 
-let lastFile = '';
-
 /**
  *
  * @param {string} directory
@@ -27,7 +25,7 @@ const nextLevelUp = (directory) => {
  */
 const findFile = async (filename, directory, level) => {
     if (!directory) {
-        return lastFile;
+        return null;
     }
 
     const file = path.join(directory, filename);
@@ -38,12 +36,9 @@ const findFile = async (filename, directory, level) => {
         console.log(`${file}: ${fileExists}`);
 
         if (fileExists) {
-            if (level === 0) {
-                return file;
-            } else {
-                lastFile = file;
-                await findFile(filename, nextDirectory, level-1);
-            }
+            return (level === 0 || !nextDirectory)
+                ? file
+                : await findFile(filename, nextDirectory, level-1);
         }
 
         return await findFile(filename, nextDirectory, level);
@@ -67,7 +62,6 @@ const findNearestFile = async (filename, root, level) => {
         throw new Error('filename must be just a filename and not a path')
     }
 
-    lastFile = '';
     return await findFile(filename, root, level);
 };
 
