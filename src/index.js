@@ -354,50 +354,56 @@ const DEFAULT_ARTIFACT = {
     };
 
     core.startGroup('Debug');
-    core.info(JSON.stringify(context));
     // core.info(Object.keys(context.payload).toString());
     core.endGroup();
 
-    const {pull_request} = context.payload;
+    switch (context.eventName) {
+        case 'pull_request': {
+            const {pull_request} = context.payload;
 
-    // Works only on pull-requests or comments
-    if (!pull_request) {
-        core.error('Only pull requests events can trigger this action');
-    }
+            /** @type {[string[], ArtifactData]} */
+            let [changedFiles, artifactData] = await Promise.all([
+                getChangedFiles(pull_request.number),
+                getArtifact(),
+            ]);
 
-    /** @type {[string[], ArtifactData]} */
-    let [changedFiles, artifactData] = await Promise.all([
-        getChangedFiles(pull_request.number),
-        getArtifact(),
-    ]);
+            core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
 
-    core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
+            artifactData = {
+                ...DEFAULT_ARTIFACT,
+                ...artifactData,
+            };
 
-    artifactData = {
-        ...DEFAULT_ARTIFACT,
-        ...artifactData,
-    };
+            core.info(`artifact: ${JSON.stringify(artifactData)}`);
 
-    core.info(`artifact: ${JSON.stringify(artifactData)}`);
+            const handlerData = await pullRequestHandler({
+                changedFiles,
+                pull_request,
+                artifactData,
+            });
 
-    if (pull_request) {
-        const handlerData = await pullRequestHandler({
-            changedFiles,
-            pull_request,
-            artifactData,
-        });
+            core.info(JSON.stringify(handlerData));
 
-        core.info(JSON.stringify(handlerData));
+            artifactData = {
+                ...artifactData,
+                ...handlerData
+            }
 
-        artifactData = {
-            ...artifactData,
-            ...handlerData
+            core.info(JSON.stringify(artifactData));
+            await uploadArtifact(artifactData);
+            break;
         }
 
-        core.info(JSON.stringify(artifactData));
-    }
+        case 'pull_request_review': {
+            const {pull_request_review} = context.payload;
+            core.info(JSON.stringify(pull_request_review));
+            break;
+        }
 
-    await uploadArtifact(artifactData);
+        default: {
+            core.error('Only pull requests events or reviews can trigger this action');
+        }
+    }
 })().catch((error) => {
     core.setFailed(error);
     process.exit(1);
