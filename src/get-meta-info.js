@@ -20,12 +20,11 @@ const filterChangedFiles = (changedFiles, ignoreFiles) => {
 /**
  * @param {string[]} changedFiles
  * @param {string} filename
- * @param {number} level
  * @returns {string[]}
  */
-const getMetaFiles = async (changedFiles, filename,level) => {
+const getMetaFiles = async (changedFiles, filename) => {
     const queue = changedFiles.map(async (filePath) => {
-        return await findNearestFile(filename, filePath, level);
+        return await findNearestFile(filename, filePath);
     });
 
     const results = await Promise.all(queue);

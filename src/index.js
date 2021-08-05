@@ -12,15 +12,12 @@ const {
 
 const utils = require('./get-meta-info');
 
-const MESSAGE_PREFIX_NEXT = '#Assign next';
-const MESSAGE_PREFIX_PREVIOUS = '#Assign previous';
 const ARTIFACT_NAME = 'project-recognition';
 const PATH = '.';
 const ZIP_FILE_NAME = `${PATH}/${ARTIFACT_NAME}.zip`;
 
 /** @type {ArtifactData} */
 const DEFAULT_ARTIFACT = {
-    level: 0,
     labels: [],
     reviewers: [],
 };
@@ -30,11 +27,8 @@ const DEFAULT_ARTIFACT = {
     const labelFilename = core.getInput('label_filename', {required: true});
     const ownersFilename = core.getInput('owners_filename', {required: true});
     const ignoreFiles = core.getMultilineInput('ignore_files', {required: true});
-    const branch = core.getInput('branch', {required: true});
     let workflowFilename = core.getInput('workflow_filename', {required: true}).split('/');
     workflowFilename = workflowFilename[workflowFilename.length - 1];
-
-    core.info(branch);
 
     const octokit = getOctokit(github_token);
 
@@ -43,7 +37,7 @@ const DEFAULT_ARTIFACT = {
      */
     const getArtifact = async () => {
         const {repo} = context;
-
+        const branch = process.env.GITHUB_HEAD_REF;
         // https://docs.github.com/en/actions/reference/environment-variables
         const workflowName = process.env.GITHUB_WORKFLOW;
 
@@ -177,22 +171,21 @@ const DEFAULT_ARTIFACT = {
      */
     const assignReviewers = async ({
         changedFiles,
-        pullRequest,
-        isComment,
+        pull_request,
         artifactData,
     }) => {
         core.startGroup('Reviewers');
         core.info(`files: ${changedFiles}`);
         const {repo} = context;
 
-        const createdBy = pullRequest.user.login;
+        const createdBy = pull_request.user.login;
 
         /** @type {string[]} */
         let reviewersOnPr = [];
 
         const requestedReviewers = (await octokit.rest.pulls.listRequestedReviewers({
             ...repo,
-            pull_number: pullRequest.number,
+            pull_number: pull_request.number,
         })).data;
 
         if (requestedReviewers.users) {
@@ -202,7 +195,7 @@ const DEFAULT_ARTIFACT = {
         }
 
         // get reviewers
-        let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename, artifactData.level);
+        let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename);
 
         if (reviewersFiles.length <= 0) {
             core.info('assigning the repo Owners');
@@ -229,7 +222,7 @@ const DEFAULT_ARTIFACT = {
         if (reviewersToRemove.length > 0) {
             queue.push(octokit.rest.pulls.removeRequestedReviewers({
                 ...repo,
-                pull_number: pullRequest.number,
+                pull_number: pull_request.number,
                 reviewers: reviewersToRemove,
             }))
         }
@@ -237,19 +230,19 @@ const DEFAULT_ARTIFACT = {
         if (reviewersToAdd.length > 0) {
             queue.push(octokit.rest.pulls.requestReviewers({
                 ...repo,
-                pull_number: pullRequest.number,
+                pull_number: pull_request.number,
                 reviewers: reviewersToAdd,
             }));
         }
 
-        if (reviewersToAdd.length > 0 || reviewersToRemove.length > 0 || isComment) {
+        if (reviewersToAdd.length > 0 || reviewersToRemove.length > 0) {
             const filesText = reviewersFiles.map((file) => {
                 return `* \`${file}\``;
             }).join('\n');
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
-                issue_number: pullRequest.number,
-                body: `Assignee level: ${artifactData.level}\n Found ${reviewersFiles.length} filenames matching: \`${ownersFilename}\` pattern!\n${filesText}`,
+                issue_number: pull_request.number,
+                body: `Found ${reviewersFiles.length} filenames matching: \`${ownersFilename}\` pattern!\n${filesText}`,
             }));
         }
 
@@ -263,12 +256,12 @@ const DEFAULT_ARTIFACT = {
     };
 
     /**
-     * @param {AutoLabelData} data
+     * @param {PullRequestHandlerData} data
      * @returns {Promise<string[]>}
      */
     const autoLabel = async ({
         changedFiles,
-        pullRequest,
+        pull_request,
         artifactData,
     }) => {
         core.startGroup('Auto label');
@@ -277,7 +270,7 @@ const DEFAULT_ARTIFACT = {
         // get the current labels on the pull-request
         const labelsOnPr = (await octokit.rest.issues.listLabelsOnIssue({
             ...repo,
-            issue_number: pullRequest.number,
+            issue_number: pull_request.number,
         })).data.map((label) => {
             if (label) {
                 return label.name;
@@ -309,7 +302,7 @@ const DEFAULT_ARTIFACT = {
         if (labelsToAdd.length > 0) {
             queue.push(octokit.rest.issues.addLabels({
                 ...repo,
-                issue_number: pullRequest.number,
+                issue_number: pull_request.number,
                 labels: labelsToAdd,
             }));
         }
@@ -319,7 +312,7 @@ const DEFAULT_ARTIFACT = {
             queue.push(...labelsToRemove.map(async (label) => {
                 return await octokit.rest.issues.removeLabel({
                     ...repo,
-                    issue_number: pullRequest.number,
+                    issue_number: pull_request.number,
                     name: label,
                 });
             }));
@@ -339,17 +332,17 @@ const DEFAULT_ARTIFACT = {
      */
     const pullRequestHandler = async ({
         changedFiles,
-        pullRequest,
+        pull_request,
         artifactData,
     }) => {
         const labels = await autoLabel({
             changedFiles,
-            pullRequest,
+            pull_request,
             artifactData,
         });
         const reviewers = await assignReviewers({
             changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
-            pullRequest,
+            pull_request,
             artifactData,
         });
 
@@ -363,22 +356,16 @@ const DEFAULT_ARTIFACT = {
     core.info(Object.keys(context.payload).toString());
     core.endGroup();
 
-    const {
-        pull_request,
-        issue,
-        comment,
-    } = context.payload;
+    const {pull_request} = context.payload;
 
     // Works only on pull-requests or comments
-    if (!pull_request && !comment) {
-        core.error('Only pull requests events or comments can trigger this action');
+    if (!pull_request) {
+        core.error('Only pull requests events can trigger this action');
     }
-
-    const pullRequest = pull_request || issue;
 
     /** @type {[string[], ArtifactData]} */
     let [changedFiles, artifactData] = await Promise.all([
-        getChangedFiles(pullRequest.number),
+        getChangedFiles(pull_request.number),
         getArtifact(),
     ]);
 
@@ -394,7 +381,7 @@ const DEFAULT_ARTIFACT = {
     if (pull_request) {
         const handlerData = await pullRequestHandler({
             changedFiles,
-            pullRequest,
+            pull_request,
             artifactData,
         });
 
@@ -408,28 +395,6 @@ const DEFAULT_ARTIFACT = {
         core.info(JSON.stringify(artifactData));
     }
 
-    if (comment && comment.body.includes(MESSAGE_PREFIX_NEXT) || comment.body.includes(MESSAGE_PREFIX_PREVIOUS)) {
-        const message = comment.body;
-        core.info(JSON.stringify(comment));
-
-        if (message.includes(MESSAGE_PREFIX_PREVIOUS)) {
-            if (artifactData.level > 0) {
-                artifactData.level--;
-            } else {
-                artifactData.level = 0;
-            }
-        } else {
-            artifactData.level++;
-        }
-
-        artifactData.reviewers = await assignReviewers({
-            changedFiles,
-            pullRequest,
-            isComment: true,
-            artifactData,
-        });
-    }
-
     await uploadArtifact(artifactData);
 })().catch((error) => {
     core.setFailed(error);
@@ -439,7 +404,7 @@ const DEFAULT_ARTIFACT = {
 /**
  * @typedef {Object} PullRequestHandlerData
  * @prop {string[]} changedFiles
- * @prop {PullRequest} pullRequest
+ * @prop {PullRequest} pull_request
  * @prop {ArtifactData} artifactData
  * @prop {boolean} [isComment]
  */
@@ -460,5 +425,4 @@ const DEFAULT_ARTIFACT = {
  * @prop {string[]} labels
  * @prop {string[]} reviewers
  * @prop {Record<string, string[]>} [ownerFilesReviewersMap]
- * @prop {number} level
  */
