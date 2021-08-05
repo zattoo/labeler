@@ -15575,6 +15575,7 @@ const utils = __nccwpck_require__(6742);
 const ARTIFACT_NAME = 'project-recognition';
 const PATH = '.';
 const ZIP_FILE_NAME = `${PATH}/${ARTIFACT_NAME}.zip`;
+const PATH_PREFIX = process.env.GITHUB_WORKSPACE;
 
 /** @type {ArtifactData} */
 const DEFAULT_ARTIFACT = {
@@ -15719,7 +15720,7 @@ const DEFAULT_ARTIFACT = {
             core.info(` - ${file.filename}`);
 
             // @see https://docs.github.com/en/actions/reference/environment-variables
-            return path.join(process.env.GITHUB_WORKSPACE, file.filename);
+            return path.join(PATH_PREFIX, file.filename);
         });
 
         return utils.filterChangedFiles(changedFiles, ignoreFiles)
@@ -15797,7 +15798,7 @@ const DEFAULT_ARTIFACT = {
 
         if (reviewersToAdd.length > 0 || reviewersToRemove.length > 0) {
             const filesText = reviewersFiles.map((file) => {
-                return `* \`${file.substr(process.env.GITHUB_WORKSPACE.length)}\``;
+                return `* \`${file.substr(PATH_PREFIX.length + 1)}\``;
             }).join('\n');
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
@@ -15913,6 +15914,7 @@ const DEFAULT_ARTIFACT = {
     };
 
     core.startGroup('Debug');
+    core.info(Object.keys(context).toString());
     core.info(Object.keys(context.payload).toString());
     core.endGroup();
 
