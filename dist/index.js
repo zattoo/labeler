@@ -15797,7 +15797,7 @@ const DEFAULT_ARTIFACT = {
 
         if (reviewersToAdd.length > 0 || reviewersToRemove.length > 0) {
             const filesText = reviewersFiles.map((file) => {
-                return `* \`${file}\``;
+                return `* \`${file.substr(process.env.GITHUB_WORKSPACE.length)}\``;
             }).join('\n');
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
@@ -15901,7 +15901,7 @@ const DEFAULT_ARTIFACT = {
             artifactData,
         });
         const reviewers = await assignReviewers({
-            changedFiles: utils.filterChangedFiles(changedFiles, ignoreFiles),
+            changedFiles,
             pull_request,
             artifactData,
         });
