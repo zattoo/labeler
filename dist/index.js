@@ -15914,8 +15914,8 @@ const DEFAULT_ARTIFACT = {
     };
 
     core.startGroup('Debug');
-    core.info(Object.keys(context).toString());
-    core.info(Object.keys(context.payload).toString());
+    core.info(JSON.stringify(context));
+    // core.info(Object.keys(context.payload).toString());
     core.endGroup();
 
     const {pull_request} = context.payload;
