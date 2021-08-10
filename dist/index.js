@@ -15781,10 +15781,6 @@ const DEFAULT_ARTIFACT = {
             return null;
         }
 
-        core.info(`workflow runs list total count: ${workflowRunsList.length}`);
-
-        core.info(workflowRunsList.map((workflowRun) => workflowRun.id).toString());
-
         const latestRun = workflowRunsList.reduce((current, next) => {
            return new Date(current.created_at) > new Date(next.created_at) ? current : next;
         });
@@ -15794,10 +15790,6 @@ const DEFAULT_ARTIFACT = {
             run_id: latestRun.id,
         })).data;
 
-        core.info(artifactsList.total_count);
-        core.info(JSON.stringify(artifactsList.artifacts));
-        core.info(typeof artifactsList.artifacts);
-
         if (artifactsList.total_count === 0) {
             core.info(`There are no artifacts for run id: ${latestRun.id}`);
             return null;
@@ -15806,8 +15798,6 @@ const DEFAULT_ARTIFACT = {
         const desiredArtifact = artifactsList.artifacts.find((artifactFile) => artifactFile.name === ARTIFACT_NAME);
 
         if (!desiredArtifact) {
-            core.info(`There are no artifacts with the name: ${ARTIFACT_NAME}`);
-            core.info(`Other artifacts on the run are ${artifactsList.artifacts.map((artifactFile) => artifactFile.name)}`);
             return null;
         }
 
@@ -15835,8 +15825,6 @@ const DEFAULT_ARTIFACT = {
 
         // Extract
         await utils.execWithCatch(`unzip -o -q ${ZIP_FILE_NAME} -d ${PATH}`);
-        const folderFiles = await fse.readdir(PATH);
-        core.info(`files list in ${PATH}: ${folderFiles}`);
 
         // Read
         return await fse.readJSON(`${PATH}/${ARTIFACT_NAME}.json`);
@@ -15883,7 +15871,6 @@ const DEFAULT_ARTIFACT = {
         let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename);
 
         if (reviewersFiles.length <= 0) {
-            core.info('assigning the repo Owners');
             reviewersFiles = [ownersFilename];
         }
 
@@ -16076,22 +16063,16 @@ const DEFAULT_ARTIFACT = {
 
     const codeowners = await getCodeOwners(pull_request.user.login, changedFiles);
 
-    core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
-
     artifactData = {
         ...DEFAULT_ARTIFACT,
         ...artifactData,
         reviewers: codeowners,
     };
 
-    core.info(`artifact: ${JSON.stringify(artifactData)}`);
-
     switch (context.eventName) {
         case 'pull_request': {
-            const [labels] = await Promise.all([
-                autoLabel(changedFiles, artifactData.labels),
-                assignReviewers(artifactData.reviewers, codeowners, Object.keys(reviewers)),
-            ]);
+            const [labels]  = await autoLabel(changedFiles, artifactData.labels);
+            await assignReviewers(artifactData.reviewers, codeowners, Object.keys(reviewers));
 
             artifactData = {
                 ...artifactData,
@@ -16112,8 +16093,6 @@ const DEFAULT_ARTIFACT = {
             const approvalRequiredFiles = changedFiles.filter((file) => {
                return !allApprovedFiles.includes(file);
             });
-
-            core.info(`approvalRequiredFiles: ${approvalRequiredFiles}`);
 
             if (approvalRequiredFiles.length > 0) {
                 const [user] = await Promise.all([
