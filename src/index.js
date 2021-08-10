@@ -353,7 +353,6 @@ const DEFAULT_ARTIFACT = {
     };
 
     /**
-     *
      * @param {OwnersMap} codeowners
      * @param {string[]} files
      */
@@ -367,7 +366,7 @@ const DEFAULT_ARTIFACT = {
                return acc;
             }, []);
 
-            return `* ${file} (${fileOwners.join(', ')})`;
+            return `* ${utils.removePrefixPathFromFile(file, PATH_PREFIX)} (${fileOwners.join(', ')})`;
         }).join('\n');
     }
 

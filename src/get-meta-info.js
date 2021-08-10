@@ -118,13 +118,23 @@ const getOwnersMap = (infoMap, changedFiles, createdBy) => {
 };
 
 /**
+ *
+ * @param {string} file
+ * @param {string} pathPrefix
+ * @returns {string}
+ */
+const removePrefixPathFromFile = (file, pathPrefix) => {
+    return file.substr(pathPrefix.length + 1);
+};
+
+/**
  * @param {OwnersMap} ownersMap
  * @param {string} pathPrefix
  * @returns {string}
  */
 const createReviewersComment = (ownersMap, pathPrefix) => {
     const arrayToList = (array) => {
-        return (array.map((file) => `* \`${file.substr(pathPrefix.length + 1)}\``).join('\n'));
+        return (array.map((file) => `* \`${removePrefixPathFromFile(file, pathPrefix)}\``).join('\n'));
     };
 
     /**
@@ -173,6 +183,7 @@ module.exports = {
     execWithCatch,
     getOwnersMap,
     createReviewersComment,
+    removePrefixPathFromFile,
 };
 
 /** @typedef {Record<string, string[]>} InfoMap */
