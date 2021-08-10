@@ -204,7 +204,7 @@ const DEFAULT_ARTIFACT = {
         }
 
         const reviewersMap = await utils.getMetaInfoFromFiles(reviewersFiles);
-        const ownersMap = utils.getOwnersMap(reviewersMap, changedFiles);
+        const ownersMap = utils.getOwnersMap(reviewersMap, changedFiles, createdBy);
         const reviewersFromFiles = Object.keys(ownersMap);
 
         const reviewersToRemove = artifactData.reviewers.filter((reviewer) => {

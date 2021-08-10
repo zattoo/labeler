@@ -63,9 +63,10 @@ const getMetaInfoFromFiles = async (files) => {
  *
  * @param {InfoMap} infoMap
  * @param {string[]} changedFiles
+ * @param {string} createdBy
  * @returns {OwnersMap}
  */
-const getOwnersMap = (infoMap, changedFiles) => {
+const getOwnersMap = (infoMap, changedFiles, createdBy) => {
     /** @type {OwnersMap} */
     const ownersMap = {};
 
@@ -105,10 +106,13 @@ const getOwnersMap = (infoMap, changedFiles) => {
             }
 
             return acc;
-        }, []))];
+        }, []))].filter(Boolean);
 
         addFileToOwners(owners, file);
     });
+
+    // Remove owner of PR
+    delete ownersMap[createdBy];
 
     return ownersMap;
 };
@@ -119,7 +123,7 @@ const getOwnersMap = (infoMap, changedFiles) => {
  */
 const createReviewersComment = (ownersMap) => {
     const arrayToList = (array) => {
-        return (array.map((file) => `* ${file}`).join('\n'));
+        return (array.map((file) => `* \`${file}\``).join('\n'));
     };
 
     /**
@@ -128,12 +132,12 @@ const createReviewersComment = (ownersMap) => {
      */
     const createCollapsableInfo = (owner, data) => {
         return (`
-            <details>
-                <summary>${owner}</summary>
+<details>
+    <summary>${owner} (${data.ownedFiles.length} files)</summary>
 
-                ### owned files:\n${arrayToList(data.ownedFiles)}
-                ### sources:\n${arrayToList(data.sources)}
-            </details>`
+    ### owned files:\n${arrayToList(data.ownedFiles)}
+    ### sources:\n${arrayToList(data.sources)}
+</details>`
         );
     };
 
