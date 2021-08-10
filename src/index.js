@@ -437,6 +437,8 @@ const DEFAULT_ARTIFACT = {
                 }
             }
 
+            await uploadArtifact(artifactData);
+
             break;
         }
 
