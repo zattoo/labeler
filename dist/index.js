@@ -16106,6 +16106,7 @@ const DEFAULT_ARTIFACT = {
                 const approvedByTheCurrentUser = Boolean(reviewers[user]);
 
                 core.info(JSON.stringify(reviewers));
+                core.info(reviewers[user]);
 
                 if (approvedByTheCurrentUser) {
                     const review = reviewers[user];
@@ -16113,6 +16114,7 @@ const DEFAULT_ARTIFACT = {
                         ...repo,
                         pull_number,
                         review_id: review.id,
+                        message: 'no sufficient approvals',
                     });
                 }
             } else {
