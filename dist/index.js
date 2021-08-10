@@ -16078,6 +16078,13 @@ const DEFAULT_ARTIFACT = {
 
             core.info(review.state);
 
+            const allReviewers = await octokit.rest.pulls.listReviews({
+                ...repo,
+                pull_number: pull_request.number,
+            });
+
+            core.info(JSON.stringify(allReviewers));
+
             if (!isCodeOwner && review.state === 'approved') {
                 await octokit.rest.issues.createComment({
                     ...repo,
@@ -16089,13 +16096,6 @@ const DEFAULT_ARTIFACT = {
             }
 
             if (isCodeOwner && review.state === 'approved') {
-                const allReviewers = await octokit.rest.pulls.listReviews({
-                    ...repo,
-                    pull_number: pull_request.number,
-                });
-
-                core.info(JSON.stringify(allReviewers));
-
                 if (artifactData.reviewers[review.user.login].ownedFiles.length === changedFiles.length) {
                     await octokit.rest.issues.createComment({
                         ...repo,
