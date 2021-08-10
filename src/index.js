@@ -189,9 +189,10 @@ const DEFAULT_ARTIFACT = {
     /**
      * @param {OwnersMap} reviewersByTheAction
      * @param {OwnersMap} codeowners
+     * @param {string[]} reviewers
      * @returns {Promise<OwnersMap>}
      */
-    const assignReviewers = async (reviewersByTheAction, codeowners) => {
+    const assignReviewers = async (reviewersByTheAction, codeowners, reviewers) => {
         core.startGroup('Reviewers');
         const {repo} = context;
 
@@ -208,6 +209,8 @@ const DEFAULT_ARTIFACT = {
                 return user.login;
             });
         }
+
+        reviewersOnPr.push(...reviewers);
 
         const reviewersFromFiles = Object.keys(codeowners);
         const artifactReviewers = Object.keys(reviewersByTheAction);
@@ -352,9 +355,14 @@ const DEFAULT_ARTIFACT = {
     core.endGroup();
 
     /** @type {[string[], ArtifactData]} */
-    let [changedFiles, artifactData] = await Promise.all([
-        getChangedFiles(pull_number),
+    let [
+        changedFiles,
+        artifactData,
+        reviewers,
+    ] = await Promise.all([
+        getChangedFiles(),
         getArtifact(),
+        getReviewers(),
     ]);
 
     const codeowners = await getCodeOwners(pull_request.user.login, changedFiles);
@@ -373,7 +381,7 @@ const DEFAULT_ARTIFACT = {
         case 'pull_request': {
             const [labels] = await Promise.all([
                 autoLabel(changedFiles, artifactData.labels),
-                assignReviewers(artifactData.reviewers, codeowners),
+                assignReviewers(artifactData.reviewers, codeowners, Object.keys(reviewers)),
             ]);
 
             artifactData = {
@@ -385,7 +393,6 @@ const DEFAULT_ARTIFACT = {
         }
 
         case 'pull_request_review': {
-            const reviewers = await getReviewers();
             const approvers = Object.keys(reviewers).filter((reviewer) => {
                 return reviewers[reviewer].state === 'APPROVED';
             });
