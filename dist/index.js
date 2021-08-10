@@ -15605,6 +15605,7 @@ const createReviewersComment = (ownersMap) => {
         return (`
             <details>
                 <summary>${owner}</summary>
+
                 ### owned files:\n${arrayToList(data.ownedFiles)}
                 ### sources:\n${arrayToList(data.sources)}
             </details>`
