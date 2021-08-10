@@ -370,10 +370,11 @@ const DEFAULT_ARTIFACT = {
         }).join('\n');
 
         return (`
-            <details>
-                <summary>Approval is still required for ${files.length} files</summary>
-                ${filesMap}
-            </details>
+<details>
+<summary>Approval is still required for ${files.length} files</summary>
+
+${filesMap}
+</details>
         `);
     }
 
