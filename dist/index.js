@@ -16069,7 +16069,7 @@ const DEFAULT_ARTIFACT = {
         case 'pull_request_review': {
             const {
                 review,
-            } = context.payload.sender;
+            } = context.payload;
 
             const reviewers = Object.keys(artifactData.reviewers);
             const {repo} = context;
