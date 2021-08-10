@@ -16093,7 +16093,7 @@ const DEFAULT_ARTIFACT = {
             });
 
             if (approvalRequiredFiles.length > 0) {
-                const [user] = await Promise.all([
+                const [authInfo] = await Promise.all([
                     octokit.rest.users.getAuthenticated(),
                     octokit.rest.issues.createComment({
                         ...repo,
@@ -16102,9 +16102,10 @@ const DEFAULT_ARTIFACT = {
                     }),
                 ]);
 
+                const user = authInfo.data.login;
                 const approvedByTheCurrentUser = Boolean(reviewers[user]);
 
-                core.info(JSON.stringify(user));
+                core.info(JSON.stringify(reviewers));
 
                 if (approvedByTheCurrentUser) {
                     const review = reviewers[user];
