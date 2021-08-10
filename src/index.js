@@ -365,6 +365,8 @@ const DEFAULT_ARTIFACT = {
         getReviewers(),
     ]);
 
+    core.info(JSON.stringify(reviewers));
+
     const codeowners = await getCodeOwners(pull_request.user.login, changedFiles);
 
     core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
