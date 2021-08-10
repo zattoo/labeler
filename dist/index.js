@@ -16025,7 +16025,7 @@ const DEFAULT_ARTIFACT = {
 
     const getUser = async () => {
         const authInfo = await octokit.rest.users.getAuthenticated();
-        return authInfo.data.user.login;
+        return authInfo.data.login;
     }
 
     /**
