@@ -16036,17 +16036,24 @@ const DEFAULT_ARTIFACT = {
      * @param {string[]} files
      */
     const getRequiredApprovals = (codeowners, files) => {
-        return files.map((file) => {
+        const filesMap = files.map((file) => {
             const fileOwners = Object.entries(codeowners).reduce((acc, [codeowner, data]) => {
-               if (data.ownedFiles.includes(file)) {
-                   acc.push(codeowner);
-               }
+                if (data.ownedFiles.includes(file)) {
+                    acc.push(codeowner);
+                }
 
-               return acc;
+                return acc;
             }, []);
 
             return `* ${utils.removePrefixPathFromFile(file, PATH_PREFIX)} (${fileOwners.join(', ')})`;
         }).join('\n');
+
+        return (`
+            <details>
+                <summary>Approval is still required for ${files.length} files</summary>
+                ${filesMap}
+            </details>
+        `);
     }
 
     core.startGroup('Debug');
@@ -16103,7 +16110,7 @@ const DEFAULT_ARTIFACT = {
                 await octokit.rest.issues.createComment({
                     ...repo,
                     issue_number: pull_request.number,
-                    body: `Approval is still required for ${approvalRequiredFiles.length} files\n${getRequiredApprovals(codeowners, approvalRequiredFiles)}`,
+                    body: getRequiredApprovals(codeowners, approvalRequiredFiles),
                 });
             } else {
                 await octokit.rest.issues.createComment({
