@@ -16035,8 +16035,8 @@ const DEFAULT_ARTIFACT = {
                return acc;
             }, []);
 
-            return `* ${file} (${fileOwners}) \n`;
-        });
+            return `* ${file} (${fileOwners})`;
+        }).join('\n');
     }
 
     core.startGroup('Debug');
