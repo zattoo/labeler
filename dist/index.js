@@ -16061,6 +16061,7 @@ const DEFAULT_ARTIFACT = {
     artifactData = {
         ...DEFAULT_ARTIFACT,
         ...artifactData,
+        reviewers: codeowners,
     };
 
     core.info(`artifact: ${JSON.stringify(artifactData)}`);
@@ -16094,8 +16095,6 @@ const DEFAULT_ARTIFACT = {
             const reviewers = Object.keys(codeowners);
             const {repo} = context;
 
-            core.info(review.state);
-
             const allReviewersData = (await octokit.rest.pulls.listReviews({
                 ...repo,
                 pull_number: pull_request.number,
@@ -16103,7 +16102,7 @@ const DEFAULT_ARTIFACT = {
 
             const approvers = allReviewersData.reduce((acc, review) => {
                 const user = review.user.login;
-                core.info(review);
+                core.info(JSON.stringify(review));
 
                 if (review.state === 'approved' && !acc.includes(user)) {
                     acc.push(user);
