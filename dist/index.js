@@ -15839,7 +15839,6 @@ const DEFAULT_ARTIFACT = {
      * @param {string[]} changedFiles
      */
     const getCodeOwners = async (createdBy, changedFiles) => {
-        core.startGroup('get code owners');
         let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename);
 
         if (reviewersFiles.length <= 0) {
@@ -15850,8 +15849,6 @@ const DEFAULT_ARTIFACT = {
         const reviewersMap = await utils.getMetaInfoFromFiles(reviewersFiles);
 
         const ownersMap = utils.getOwnersMap(reviewersMap, changedFiles, createdBy);
-        core.info(ownersMap);
-        core.endGroup();
         return ownersMap;
     };
 
@@ -16058,7 +16055,6 @@ const DEFAULT_ARTIFACT = {
     ]);
 
     const codeowners = await getCodeOwners(pull_request.user.login, changedFiles);
-    core.info(JSON.stringify(codeowners));
 
     core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
 
@@ -16095,7 +16091,7 @@ const DEFAULT_ARTIFACT = {
                 review,
             } = context.payload;
 
-            const reviewers = Object.keys(codeowners.reviewers);
+            const reviewers = Object.keys(codeowners);
             const {repo} = context;
 
             core.info(review.state);
