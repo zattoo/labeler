@@ -15904,8 +15904,6 @@ const DEFAULT_ARTIFACT = {
             });
         }
 
-        core.info(reviewers);
-
         reviewersOnPr = [...new Set(reviewersOnPr, reviewers)];
 
         const reviewersFromFiles = Object.keys(codeowners);
