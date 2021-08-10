@@ -16055,6 +16055,7 @@ const DEFAULT_ARTIFACT = {
     ]);
 
     const codeowners = await getCodeOwners(pull_request.user.login, changedFiles);
+    core.info(JSON.stringify(codeowners));
 
     core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
 
