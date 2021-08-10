@@ -15906,7 +15906,7 @@ const DEFAULT_ARTIFACT = {
 
         core.info(reviewers);
 
-        reviewersOnPr = [...new Set(reviewersOnPr, reviewers)];
+        reviewersOnPr = [...new Set([reviewersOnPr, reviewers].flat())];
         core.info(`reviewersOnPr: ${reviewersOnPr}`);
 
         const reviewersFromFiles = Object.keys(codeowners);
