@@ -15835,6 +15835,24 @@ const DEFAULT_ARTIFACT = {
     };
 
     /**
+     * @param {string} createdBy
+     * @param {string[]} changedFiles
+     */
+    const getCodeOwners = async (createdBy, changedFiles) => {
+        let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename);
+
+        if (reviewersFiles.length <= 0) {
+            core.info('assigning the repo Owners');
+            reviewersFiles = [ownersFilename];
+        }
+
+        const reviewersMap = await utils.getMetaInfoFromFiles(reviewersFiles);
+        const ownersMap = utils.getOwnersMap(reviewersMap, changedFiles, createdBy);
+
+        return ownersMap;
+    };
+
+    /**
      * @param {PullRequestHandlerData} data
      * @returns {Promise<OwnersMap>}
      */
@@ -16036,6 +16054,8 @@ const DEFAULT_ARTIFACT = {
         getArtifact(),
     ]);
 
+    const codeowners = await getCodeOwners(pull_request.user.login, changedFiles);
+
     core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
 
     artifactData = {
@@ -16071,19 +16091,29 @@ const DEFAULT_ARTIFACT = {
                 review,
             } = context.payload;
 
-            const reviewers = Object.keys(artifactData.reviewers);
+            const reviewers = Object.keys(codeowners.reviewers);
             const {repo} = context;
-
-            const isCodeOwner = reviewers.includes(review.user.login);
 
             core.info(review.state);
 
-            const allReviewers = await octokit.rest.pulls.listReviews({
+            const allReviewersData = (await octokit.rest.pulls.listReviews({
                 ...repo,
                 pull_number: pull_request.number,
-            });
+            })).data;
 
-            core.info(JSON.stringify(allReviewers));
+            const approvers = allReviewersData.reduce((acc, review) => {
+                const user = review.user.login;
+
+                if (review.state === 'approved' && !acc.includes(user)) {
+                    acc.push(user);
+                }
+
+                return acc;
+            }, []);
+
+            const isCodeOwner = reviewers.includes(review.user.login);
+
+            core.info(JSON.stringify(approvers));
 
             if (!isCodeOwner && review.state === 'approved') {
                 await octokit.rest.issues.createComment({
@@ -16096,7 +16126,7 @@ const DEFAULT_ARTIFACT = {
             }
 
             if (isCodeOwner && review.state === 'approved') {
-                if (artifactData.reviewers[review.user.login].ownedFiles.length === changedFiles.length) {
+                if (codeowners.reviewers[review.user.login].ownedFiles.length === changedFiles.length) {
                     await octokit.rest.issues.createComment({
                         ...repo,
                         issue_number: pull_request.number,
