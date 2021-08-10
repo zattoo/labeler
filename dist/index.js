@@ -15701,6 +15701,9 @@ const DEFAULT_ARTIFACT = {
 
     const octokit = getOctokit(github_token);
 
+    const {repo} = context;
+    const {pull_request} = context.payload;
+    const pull_number = pull_request.number;
     /**
      * @returns {Promise<ArtifactData>}
      */
@@ -15812,10 +15815,9 @@ const DEFAULT_ARTIFACT = {
     };
 
     /**
-     * @param {number} pull_number
      * @returns {string[]}
      */
-    const getChangedFiles = async (pull_number) => {
+    const getChangedFiles = async () => {
         const listFilesOptions = octokit.rest.pulls.listFiles.endpoint.merge({
             ...context.repo,
             pull_number,
@@ -15853,26 +15855,20 @@ const DEFAULT_ARTIFACT = {
     };
 
     /**
-     * @param {PullRequestHandlerData} data
+     * @param {OwnersMap} reviewersByTheAction
+     * @param {OwnersMap} codeowners
      * @returns {Promise<OwnersMap>}
      */
-    const assignReviewers = async ({
-        changedFiles,
-        pull_request,
-        artifactData,
-    }) => {
+    const assignReviewers = async (reviewersByTheAction, codeowners) => {
         core.startGroup('Reviewers');
-        core.info(`files: ${changedFiles}`);
         const {repo} = context;
-
-        const createdBy = pull_request.user.login;
 
         /** @type {string[]} */
         let reviewersOnPr = [];
 
         const requestedReviewers = (await octokit.rest.pulls.listRequestedReviewers({
             ...repo,
-            pull_number: pull_request.number,
+            pull_number,
         })).data;
 
         if (requestedReviewers.users) {
@@ -15881,26 +15877,11 @@ const DEFAULT_ARTIFACT = {
             });
         }
 
-        // get reviewers
-        let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename);
+        const reviewersFromFiles = Object.keys(codeowners);
+        const artifactReviewers = Object.keys(reviewersByTheAction);
 
-        if (reviewersFiles.length <= 0) {
-            core.info('assigning the repo Owners');
-            reviewersFiles = [ownersFilename];
-        }
-
-        const reviewersMap = await utils.getMetaInfoFromFiles(reviewersFiles);
-        const ownersMap = utils.getOwnersMap(reviewersMap, changedFiles, createdBy);
-        const reviewersFromFiles = Object.keys(ownersMap);
-        const artifactReviewers = Object.keys(artifactData.reviewers);
-
-        const reviewersToRemove = artifactReviewers.filter((reviewer) => {
-            return !reviewersFromFiles.includes(reviewer);
-        });
-
-        const reviewersToAdd = reviewersFromFiles.filter((reviewer) => {
-            return !reviewersOnPr.includes(reviewer) && createdBy !== reviewer;
-        });
+        const reviewersToRemove = artifactReviewers.filter((reviewer) => !reviewersFromFiles.includes(reviewer));
+        const reviewersToAdd = reviewersFromFiles.filter((reviewer) => reviewersOnPr.includes(reviewer));
 
         core.info(`Reviewers assigned to pull-request: ${reviewersOnPr}`);
         core.info(`Reviewers which were assigned by the action: ${artifactReviewers}`);
@@ -15912,7 +15893,7 @@ const DEFAULT_ARTIFACT = {
         if (reviewersToRemove.length > 0) {
             queue.push(octokit.rest.pulls.removeRequestedReviewers({
                 ...repo,
-                pull_number: pull_request.number,
+                pull_number,
                 reviewers: reviewersToRemove,
             }))
         }
@@ -15920,7 +15901,7 @@ const DEFAULT_ARTIFACT = {
         if (reviewersToAdd.length > 0) {
             queue.push(octokit.rest.pulls.requestReviewers({
                 ...repo,
-                pull_number: pull_request.number,
+                pull_number,
                 reviewers: reviewersToAdd,
             }));
         }
@@ -15928,8 +15909,8 @@ const DEFAULT_ARTIFACT = {
         if (reviewersToAdd.length > 0 || reviewersToRemove.length > 0) {
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
-                issue_number: pull_request.number,
-                body: utils.createReviewersComment(ownersMap, PATH_PREFIX)
+                pull_number,
+                body: utils.createReviewersComment(codeowners, PATH_PREFIX)
             }));
         }
 
@@ -15938,33 +15919,26 @@ const DEFAULT_ARTIFACT = {
         }
 
         core.endGroup();
-
-        return ownersMap;
     };
 
     /**
-     * @param {PullRequestHandlerData} data
+     * @param {string[]} changedFiles
+     * @param {string[]} labeledByTheAction
      * @returns {Promise<string[]>}
      */
-    const autoLabel = async ({
-        changedFiles,
-        pull_request,
-        artifactData,
-    }) => {
+    const autoLabel = async (changedFiles, labeledByTheAction) => {
         core.startGroup('Auto label');
-        const {repo} = context;
+        const issue_number = pull_number;
 
         // get the current labels on the pull-request
         const labelsOnPr = (await octokit.rest.issues.listLabelsOnIssue({
             ...repo,
-            issue_number: pull_request.number,
+            issue_number,
         })).data.map((label) => {
             if (label) {
                 return label.name;
             }
         });
-
-        const labeledByTheAction = artifactData.labels;
 
         // get labels
         const labelsFiles = await utils.getMetaFiles(changedFiles, labelFilename);
@@ -15990,7 +15964,7 @@ const DEFAULT_ARTIFACT = {
         if (labelsToAdd.length > 0) {
             queue.push(octokit.rest.issues.addLabels({
                 ...repo,
-                issue_number: pull_request.number,
+                issue_number,
                 labels: labelsToAdd,
             }));
         }
@@ -16000,7 +15974,7 @@ const DEFAULT_ARTIFACT = {
             queue.push(...labelsToRemove.map(async (label) => {
                 return await octokit.rest.issues.removeLabel({
                     ...repo,
-                    issue_number: pull_request.number,
+                    issue_number,
                     name: label,
                 });
             }));
@@ -16016,41 +15990,63 @@ const DEFAULT_ARTIFACT = {
     };
 
     /**
-     * @param {PullRequestHandlerData} data
+     * @returns {Promise<string[]>}
      */
-    const pullRequestHandler = async ({
-        changedFiles,
-        pull_request,
-        artifactData,
-    }) => {
-        const labels = await autoLabel({
-            changedFiles,
-            pull_request,
-            artifactData,
+    const getApprovers = async () => {
+        const allReviewersData = (await octokit.rest.pulls.listReviews({
+            ...repo,
+            pull_number,
+        })).data;
+
+        const latestReviews = {};
+
+        allReviewersData.forEach((review) => {
+            const user = review.user.login;
+            core.info(JSON.stringify(review));
+
+            const hasUserAlready = Boolean(latestReviews[user]);
+
+            if (!hasUserAlready) {
+                latestReviews[user] = review;
+            } else if (review.submitted_at > latestReviews[user].submitted_at) {
+                latestReviews[user] = review;
+            }
         });
 
-        const reviewers = await assignReviewers({
-            changedFiles,
-            pull_request,
-            artifactData,
+        const approvers = Object.keys(latestReviews).filter((reviewer) => {
+            return latestReviews[reviewer].state === 'APPROVED';
         });
 
-        return {
-            labels,
-            reviewers,
-        }
+        return approvers;
     };
+
+    /**
+     *
+     * @param {OwnersMap} codeowners
+     * @param {string[]} files
+     */
+    const getRequiredApprovals = (codeowners, files) => {
+        return files.map((file) => {
+            const fileOwners = Object.entries(codeowners).reduce((acc, [codeowner, data]) => {
+               if (data.ownedFiles.includes(file)) {
+                   acc.push(codeowner);
+               }
+
+               return acc;
+            }, []);
+
+            return `* ${file} (${fileOwners.join()}\n`;
+        });
+    }
 
     core.startGroup('Debug');
     core.info(Object.keys(context).toString());
     core.info(Object.keys(context.payload).toString());
     core.endGroup();
 
-    const {pull_request} = context.payload;
-
     /** @type {[string[], ArtifactData]} */
     let [changedFiles, artifactData] = await Promise.all([
-        getChangedFiles(pull_request.number),
+        getChangedFiles(pull_number),
         getArtifact(),
     ]);
 
@@ -16068,56 +16064,21 @@ const DEFAULT_ARTIFACT = {
 
     switch (context.eventName) {
         case 'pull_request': {
-
-            const handlerData = await pullRequestHandler({
-                changedFiles,
-                pull_request,
-                artifactData,
-            });
-
-            core.info(JSON.stringify(handlerData));
+            const [labels] = await Promise.all([
+                autoLabel(changedFiles, artifactData.labels),
+                assignReviewers(artifactData.reviewers, codeowners),
+            ]);
 
             artifactData = {
                 ...artifactData,
-                ...handlerData
+                labels,
             }
 
-            core.info(JSON.stringify(artifactData));
-            await uploadArtifact(artifactData);
             break;
         }
 
         case 'pull_request_review': {
-            const {
-                review,
-            } = context.payload;
-
-            const reviewers = Object.keys(codeowners);
-            const {repo} = context;
-
-            const allReviewersData = (await octokit.rest.pulls.listReviews({
-                ...repo,
-                pull_number: pull_request.number,
-            })).data;
-
-            const latestReviews = {};
-
-            allReviewersData.forEach((review) => {
-                const user = review.user.login;
-                core.info(JSON.stringify(review));
-
-                const hasUserAlready = Boolean(latestReviews[user]);
-
-                if (!hasUserAlready) {
-                    latestReviews[user] = review;
-                } else if (review.submitted_at > latestReviews[user].submitted_at) {
-                    latestReviews[user] = review;
-                }
-            });
-
-            const approvers = Object.keys(latestReviews).filter((reviewer) => {
-                return latestReviews[reviewer].state === 'APPROVED';
-            });
+            const approvers = await getApprovers();
 
             const allApprovedFiles = [...new Set(approvers.map((approver) => codeowners[approver].ownedFiles).flat())];
             core.info(allApprovedFiles);
@@ -16128,11 +16089,11 @@ const DEFAULT_ARTIFACT = {
 
             core.info(`approvalRequiredFiles: ${approvalRequiredFiles}`);
 
-            if(approvalRequiredFiles.length > 0) {
+            if (approvalRequiredFiles.length > 0) {
                 await octokit.rest.issues.createComment({
                     ...repo,
                     issue_number: pull_request.number,
-                    body: `Approval is still required for ${approvalRequiredFiles.length} files\n${approvalRequiredFiles}`,
+                    body: `Approval is still required for ${approvalRequiredFiles.length} files\n${getRequiredApprovals(codeowners, approvalRequiredFiles)}`,
                 });
             } else {
                 await octokit.rest.issues.createComment({
@@ -16142,37 +16103,14 @@ const DEFAULT_ARTIFACT = {
                 });
             }
 
-            // const isCodeOwner = reviewers.includes(review.user.login);
-            // core.info(isCodeOwner);
-
-            // if (!isCodeOwner && review.state === 'approved') {
-            //     await octokit.rest.issues.createComment({
-            //         ...repo,
-            //         issue_number: pull_request.number,
-            //         body: `${review.user.login} is not a Codeowner of the changed files in this PR, not gonna approve`,
-            //     });
-            //
-            //     return;
-            // }
-            //
-            // if (isCodeOwner && review.state === 'approved') {
-            //     if (codeowners.reviewers[review.user.login].ownedFiles.length === changedFiles.length) {
-            //         await octokit.rest.issues.createComment({
-            //             ...repo,
-            //             issue_number: pull_request.number,
-            //             body: `${review.user.login} own all the files, we shall approve this`,
-            //         });
-            //     }
-            // }
-
-            await uploadArtifact(artifactData);
-
             break;
         }
 
         default: {
             core.error('Only pull requests events or reviews can trigger this action');
         }
+
+        await uploadArtifact(artifactData);
     }
 })().catch((error) => {
     core.setFailed(error);
@@ -16184,6 +16122,7 @@ const DEFAULT_ARTIFACT = {
  * @prop {string[]} changedFiles
  * @prop {PullRequest} pull_request
  * @prop {ArtifactData} artifactData
+ * @prop {OwnersMap} codeowners
  */
 
 /**
