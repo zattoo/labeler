@@ -398,9 +398,6 @@ const DEFAULT_ARTIFACT = {
                 const user = authInfo.data.login;
                 const approvedByTheCurrentUser = Boolean(reviewers[user]);
 
-                core.info(JSON.stringify(reviewers));
-                core.info(reviewers[user]);
-
                 if (approvedByTheCurrentUser) {
                     const review = reviewers[user];
                     await octokit.rest.pulls.dismissReview({
@@ -411,12 +408,6 @@ const DEFAULT_ARTIFACT = {
                     });
                 }
             } else {
-                await octokit.rest.issues.createComment({
-                    ...repo,
-                    issue_number: pull_number,
-                    body: 'looks good should approve',
-                });
-
                 await octokit.rest.pulls.createReview({
                     ...repo,
                     pull_number,
