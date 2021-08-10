@@ -360,24 +360,25 @@ const DEFAULT_ARTIFACT = {
     core.info(Object.keys(context.payload).toString());
     core.endGroup();
 
+    const {pull_request} = context.payload;
+
+    /** @type {[string[], ArtifactData]} */
+    let [changedFiles, artifactData] = await Promise.all([
+        getChangedFiles(pull_request.number),
+        getArtifact(),
+    ]);
+
+    core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
+
+    artifactData = {
+        ...DEFAULT_ARTIFACT,
+        ...artifactData,
+    };
+
+    core.info(`artifact: ${JSON.stringify(artifactData)}`);
+
     switch (context.eventName) {
         case 'pull_request': {
-            const {pull_request} = context.payload;
-
-            /** @type {[string[], ArtifactData]} */
-            let [changedFiles, artifactData] = await Promise.all([
-                getChangedFiles(pull_request.number),
-                getArtifact(),
-            ]);
-
-            core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
-
-            artifactData = {
-                ...DEFAULT_ARTIFACT,
-                ...artifactData,
-            };
-
-            core.info(`artifact: ${JSON.stringify(artifactData)}`);
 
             const handlerData = await pullRequestHandler({
                 changedFiles,
@@ -398,11 +399,44 @@ const DEFAULT_ARTIFACT = {
         }
 
         case 'pull_request_review': {
-            const sender = context.payload.sender;
-            const review = context.payload.review;
+            const {
+                review,
+            } = context.payload.sender;
 
-            core.info(Object.keys(sender).toString());
-            core.info(Object.keys(review).toString());
+            const reviewers = Object.keys(artifactData.reviewers);
+            const {repo} = context;
+
+            const isCodeOwner = reviewers.includes(review.user.login);
+
+            core.info(review.state);
+
+            if (!isCodeOwner && review.state === 'approved') {
+                await octokit.rest.issues.createComment({
+                    ...repo,
+                    issue_number: pull_request.number,
+                    body: `${review.user.login} is not a Codeowner of the changed files in this PR, not gonna approve`,
+                });
+
+                return;
+            }
+
+            if (isCodeOwner && review.state === 'approved') {
+                const allReviewers = await octokit.rest.pulls.listReviews({
+                    ...repo,
+                    pull_number: pull_request.number,
+                });
+
+                core.info(JSON.stringify(allReviewers));
+
+                if (artifactData.reviewers[review.user.login].ownedFiles.length === changedFiles.length) {
+                    await octokit.rest.issues.createComment({
+                        ...repo,
+                        issue_number: pull_request.number,
+                        body: `${review.user.login} own all the files, we shall approve this`,
+                    });
+                }
+            }
+
             break;
         }
 
@@ -420,7 +454,6 @@ const DEFAULT_ARTIFACT = {
  * @prop {string[]} changedFiles
  * @prop {PullRequest} pull_request
  * @prop {ArtifactData} artifactData
- * @prop {boolean} [isComment]
  */
 
 /**
