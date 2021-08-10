@@ -15688,7 +15688,7 @@ const PATH_PREFIX = process.env.GITHUB_WORKSPACE;
 /** @type {ArtifactData} */
 const DEFAULT_ARTIFACT = {
     labels: [],
-    reviewers: [],
+    reviewers: {},
 };
 
 (async () => {
@@ -15836,7 +15836,7 @@ const DEFAULT_ARTIFACT = {
 
     /**
      * @param {PullRequestHandlerData} data
-     * @returns {Promise<string[]>}
+     * @returns {Promise<OwnersMap>}
      */
     const assignReviewers = async ({
         changedFiles,
@@ -15874,8 +15874,9 @@ const DEFAULT_ARTIFACT = {
         const reviewersMap = await utils.getMetaInfoFromFiles(reviewersFiles);
         const ownersMap = utils.getOwnersMap(reviewersMap, changedFiles, createdBy);
         const reviewersFromFiles = Object.keys(ownersMap);
+        const artifactReviewers = Object.keys(artifactData.reviewers);
 
-        const reviewersToRemove = artifactData.reviewers.filter((reviewer) => {
+        const reviewersToRemove = artifactReviewers.filter((reviewer) => {
             return !reviewersFromFiles.includes(reviewer);
         });
 
@@ -15884,7 +15885,7 @@ const DEFAULT_ARTIFACT = {
         });
 
         core.info(`Reviewers assigned to pull-request: ${reviewersOnPr}`);
-        core.info(`Reviewers which were assigned by the action: ${artifactData.reviewers}`);
+        core.info(`Reviewers which were assigned by the action: ${artifactReviewers}`);
         core.info(`Reviewers to remove: ${reviewersToRemove}`);
         core.info(`Reviewers to add: ${reviewersToAdd}`);
 
@@ -15920,7 +15921,7 @@ const DEFAULT_ARTIFACT = {
 
         core.endGroup();
 
-        return reviewersFromFiles;
+        return ownersMap;
     };
 
     /**
@@ -16100,9 +16101,11 @@ const DEFAULT_ARTIFACT = {
 /**
  * @typedef {Object} ArtifactData
  * @prop {string[]} labels
- * @prop {string[]} reviewers
- * @prop {Record<string, string[]>} [ownerFilesReviewersMap]
+ * @prop {OwnersMap} reviewers
  */
+
+
+/** @typedef {import('./get-meta-info').OwnersMap} OwnersMap */
 
 
 /***/ }),
