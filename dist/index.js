@@ -15917,7 +15917,7 @@ const DEFAULT_ARTIFACT = {
             });
         }
 
-        reviewersOnPr.push(...reviewers);
+        reviewersOnPr = [...new Set(reviewersOnPr, reviewers)];
 
         const reviewersFromFiles = Object.keys(codeowners);
         const artifactReviewers = Object.keys(reviewersByTheAction);
