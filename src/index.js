@@ -284,6 +284,7 @@ const DEFAULT_ARTIFACT = {
         core.info(`Labels which were added by the action: ${labeledByTheAction}`);
         core.info(`Labels to remove: ${labelsToRemove}`);
         core.info(`Labels to add: ${labelsToAdd}`);
+        core.error('kill');
 
         const queue = [];
 
@@ -401,7 +402,7 @@ const DEFAULT_ARTIFACT = {
                 ]);
 
                 const user = authInfo.data.login;
-                const approvedByTheCurrentUser = Boolean(reviewers[user]);
+                const approvedByTheCurrentUser = reviewers[user] && reviewers[user].state === 'APPROVED';
 
                 if (approvedByTheCurrentUser) {
                     const review = reviewers[user];
@@ -417,7 +418,7 @@ const DEFAULT_ARTIFACT = {
                     ...repo,
                     pull_number,
                     event: 'APPROVE',
-                    body: 'all required approvals achieved, can merge now',
+                    body: 'All required approvals achieved, can merge now',
                 });
             }
 
