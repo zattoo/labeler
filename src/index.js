@@ -337,8 +337,6 @@ const DEFAULT_ARTIFACT = {
 
         allReviewersData.forEach((review) => {
             const user = review.user.login;
-            core.info(JSON.stringify(review));
-
             const hasUserAlready = Boolean(latestReviews[user]);
 
             if (!hasUserAlready) {
@@ -347,6 +345,8 @@ const DEFAULT_ARTIFACT = {
                 latestReviews[user] = review;
             }
         });
+
+        return latestReviews;
     };
 
     core.startGroup('Debug');
