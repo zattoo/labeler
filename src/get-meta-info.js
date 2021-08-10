@@ -48,7 +48,7 @@ const getMetaInfoFromFiles = async (files) => {
         try {
             const data = (await fse.readFile(file, 'utf8'));
             const dataToArray = data.split('\n');
-            infoMap[file] = dataToArray;
+            infoMap[file] = dataToArray.filter(Boolean);
 
         } catch (e) {
             console.error(`file: ${file} errored while reading data: ${e}`);
@@ -133,10 +133,10 @@ const createReviewersComment = (ownersMap) => {
     const createCollapsableInfo = (owner, data) => {
         return (`
 <details>
-    <summary>${owner} (${data.ownedFiles.length} files)</summary>
+ <summary>${owner} (${data.ownedFiles.length} files)</summary>
 
-    ### owned files:\n${arrayToList(data.ownedFiles)}
-    ### sources:\n${arrayToList(data.sources)}
+ ### Owned files:\n${arrayToList(data.ownedFiles)}
+ ### sources:\n${arrayToList(data.sources)}
 </details>`
         );
     };
