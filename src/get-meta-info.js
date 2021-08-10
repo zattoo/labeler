@@ -164,6 +164,33 @@ const createReviewersComment = (ownersMap, pathPrefix) => {
 };
 
 /**
+ * @param {OwnersMap} codeowners
+ * @param {string[]} files
+ * @param {string} pathPrefix
+ */
+const createRequiredApprovalsComment = (codeowners, files, pathPrefix) => {
+    const filesMap = files.map((file) => {
+        const fileOwners = Object.entries(codeowners).reduce((acc, [codeowner, data]) => {
+            if (data.ownedFiles.includes(file)) {
+                acc.push(codeowner);
+            }
+
+            return acc;
+        }, []);
+
+        return `* ${removePrefixPathFromFile(file, pathPrefix)} (${fileOwners.join(', ')})`;
+    }).join('\n');
+
+    return (`
+<details>
+<summary>Approval is still required for ${files.length} files</summary>
+
+${filesMap}
+</details>
+`);
+};
+
+/**
  * @param {string} executionCode
  * @param {string} [cwd]
  */
@@ -184,6 +211,7 @@ module.exports = {
     getOwnersMap,
     createReviewersComment,
     removePrefixPathFromFile,
+    createRequiredApprovalsComment,
 };
 
 /** @typedef {Record<string, string[]>} InfoMap */

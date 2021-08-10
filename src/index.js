@@ -322,9 +322,9 @@ const DEFAULT_ARTIFACT = {
     };
 
     /**
-     * @returns {Promise<string[]>}
+     * @returns {Promise<Record<string, object>>}
      */
-    const getApprovers = async () => {
+    const getReviewers = async () => {
         const allReviewersData = (await octokit.rest.pulls.listReviews({
             ...repo,
             pull_number,
@@ -344,39 +344,7 @@ const DEFAULT_ARTIFACT = {
                 latestReviews[user] = review;
             }
         });
-
-        const approvers = Object.keys(latestReviews).filter((reviewer) => {
-            return latestReviews[reviewer].state === 'APPROVED';
-        });
-
-        return approvers;
     };
-
-    /**
-     * @param {OwnersMap} codeowners
-     * @param {string[]} files
-     */
-    const getRequiredApprovals = (codeowners, files) => {
-        const filesMap = files.map((file) => {
-            const fileOwners = Object.entries(codeowners).reduce((acc, [codeowner, data]) => {
-                if (data.ownedFiles.includes(file)) {
-                    acc.push(codeowner);
-                }
-
-                return acc;
-            }, []);
-
-            return `* ${utils.removePrefixPathFromFile(file, PATH_PREFIX)} (${fileOwners.join(', ')})`;
-        }).join('\n');
-
-        return (`
-<details>
-<summary>Approval is still required for ${files.length} files</summary>
-
-${filesMap}
-</details>
-        `);
-    }
 
     core.startGroup('Debug');
     core.info(Object.keys(context).toString());
@@ -417,7 +385,10 @@ ${filesMap}
         }
 
         case 'pull_request_review': {
-            const approvers = await getApprovers();
+            const reviewers = await getReviewers();
+            const approvers = Object.keys(reviewers).filter((reviewer) => {
+                return reviewers[reviewer].state === 'APPROVED';
+            });
 
             const allApprovedFiles = [...new Set(approvers.map((approver) => codeowners[approver].ownedFiles).flat())];
             core.info(allApprovedFiles);
@@ -429,16 +400,39 @@ ${filesMap}
             core.info(`approvalRequiredFiles: ${approvalRequiredFiles}`);
 
             if (approvalRequiredFiles.length > 0) {
-                await octokit.rest.issues.createComment({
-                    ...repo,
-                    issue_number: pull_request.number,
-                    body: getRequiredApprovals(codeowners, approvalRequiredFiles),
-                });
+                const [user] = await Promise.all([
+                    octokit.rest.users.getAuthenticated(),
+                    octokit.rest.issues.createComment({
+                        ...repo,
+                        issue_number: pull_request.number,
+                        body: utils.createRequiredApprovalsComment(codeowners, approvalRequiredFiles,PATH_PREFIX),
+                    }),
+                ]);
+
+                const approvedByTheCurrentUser = Boolean(reviewers[user]);
+
+                core.info(JSON.stringify(user));
+
+                if (approvedByTheCurrentUser) {
+                    const review = reviewers[user];
+                    await octokit.rest.pulls.dismissReview({
+                        ...repo,
+                        pull_number,
+                        review_id: review.id,
+                    });
+                }
             } else {
                 await octokit.rest.issues.createComment({
                     ...repo,
-                    issue_number: pull_request.number,
+                    issue_number: pull_number,
                     body: 'looks good should approve',
+                });
+
+                await octokit.rest.pulls.createReview({
+                    ...repo,
+                    pull_number,
+                    event: 'APPROVE',
+                    body: 'all required approvals achieved, can merge now',
                 });
             }
 
