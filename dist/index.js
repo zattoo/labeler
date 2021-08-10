@@ -15839,6 +15839,7 @@ const DEFAULT_ARTIFACT = {
      * @param {string[]} changedFiles
      */
     const getCodeOwners = async (createdBy, changedFiles) => {
+        core.startGroup('get code owners');
         let reviewersFiles = await utils.getMetaFiles(changedFiles, ownersFilename);
 
         if (reviewersFiles.length <= 0) {
@@ -15847,8 +15848,10 @@ const DEFAULT_ARTIFACT = {
         }
 
         const reviewersMap = await utils.getMetaInfoFromFiles(reviewersFiles);
-        const ownersMap = utils.getOwnersMap(reviewersMap, changedFiles, createdBy);
 
+        const ownersMap = utils.getOwnersMap(reviewersMap, changedFiles, createdBy);
+        core.info(ownersMap);
+        core.endGroup();
         return ownersMap;
     };
 
