@@ -398,8 +398,11 @@ const DEFAULT_ARTIFACT = {
         }
 
         case 'pull_request_review': {
-            core.info(context.actor, context.action);
-            core.info(JSON.stringify(context.payload));
+            const sender = context.payload.sender;
+            const review = context.payload.review;
+
+            core.info(Object.keys(sender).toString());
+            core.info(Object.keys(review).toString());
             break;
         }
 

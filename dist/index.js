@@ -16066,9 +16066,11 @@ const DEFAULT_ARTIFACT = {
         }
 
         case 'pull_request_review': {
-            const {pull_request_review} = context.payload;
-            core.info(context.actor, context.action);
-            core.info(JSON.stringify(context.payload));
+            const sender = context.payload.sender;
+            const review = context.payload.review;
+
+            core.info(Object.keys(sender).toString());
+            core.info(Object.keys(review).toString());
             break;
         }
 
