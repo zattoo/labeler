@@ -180,7 +180,7 @@ const DEFAULT_ARTIFACT = {
      * @returns {Promise<OwnersMap>}
      */
     const assignReviewers = async (reviewersByTheAction, codeowners, reviewers) => {
-        core.startGroup('Reviewers');
+        core.startGroup('Assign Reviewers');
         const {repo} = context;
 
         /** @type {string[]} */
@@ -248,8 +248,8 @@ const DEFAULT_ARTIFACT = {
      * @param {string[]} labeledByTheAction
      * @returns {Promise<string[]>}
      */
-    const autoLabel = async (changedFiles, labeledByTheAction) => {
-        core.startGroup('Auto label');
+    const assignLabels = async (changedFiles, labeledByTheAction) => {
+        core.startGroup('Assign Labels');
         const issue_number = pull_number;
 
         // get the current labels on the pull-request
@@ -357,7 +357,7 @@ const DEFAULT_ARTIFACT = {
 
     switch (context.eventName) {
         case 'pull_request': {
-            const [labels]  = await autoLabel(changedFiles, artifactData.labels);
+            const [labels]  = await assignLabels(changedFiles, artifactData.labels);
             await assignReviewers(artifactData.reviewers, codeowners, Object.keys(reviewers));
 
             artifactData = {
@@ -373,7 +373,12 @@ const DEFAULT_ARTIFACT = {
                 return reviewers[reviewer].state === 'APPROVED';
             });
 
-            const allApprovedFiles = [...new Set(approvers.map((approver) => codeowners[approver].ownedFiles).flat())];
+            const allApprovedFiles = [...new Set(approvers.reduce((acc, approver) => {
+                if(codeowners[approver]) {
+                    acc.push(...codeowners[approver].ownedFiles);
+                }
+                return acc;
+            }, []))];
             core.info(allApprovedFiles);
 
             const approvalRequiredFiles = changedFiles.filter((file) => {
