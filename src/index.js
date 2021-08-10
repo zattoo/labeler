@@ -381,9 +381,12 @@ const DEFAULT_ARTIFACT = {
         }
 
         case 'pull_request_review': {
+            core.info(Object.keys(context.payload));
+            core.info(Object.keys(context.payload.review));
+
             // We don't want to go into Infinite loop
             if (context.payload.review.user.login === user) {
-                return;
+                break;
             }
 
             const approvers = Object.keys(reviewers).filter((reviewer) => {
