@@ -336,11 +336,11 @@ const DEFAULT_ARTIFACT = {
         pull_request,
         artifactData,
     }) => {
-        const labels = await autoLabel({
-            changedFiles,
-            pull_request,
-            artifactData,
-        });
+        // const labels = await autoLabel({
+        //     changedFiles,
+        //     pull_request,
+        //     artifactData,
+        // });
         const reviewers = await assignReviewers({
             changedFiles,
             pull_request,
