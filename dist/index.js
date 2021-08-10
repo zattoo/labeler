@@ -15476,6 +15476,7 @@ module.exports = {findNearestFile}
 const fse = __nccwpck_require__(5630);
 const {promisify} = __nccwpck_require__(1669);
 const {exec} = __nccwpck_require__(3129);
+const path = __nccwpck_require__(5622);
 
 const {findNearestFile} = __nccwpck_require__(9772);
 
@@ -15508,28 +15509,117 @@ const getMetaFiles = async (changedFiles, filename) => {
 };
 
 /**
- * @param {string[]} labelFiles
- * @returns {string[]}
+ * @param {string[]} files
+ * @returns {InfoMap}
  */
-const getMetaInfoFromFiles = async (labelFiles) => {
-    const labels = [];
+const getMetaInfoFromFiles = async (files) => {
+    const infoMap = {};
 
-    await Promise.all(...[labelFiles.map(async (file) => {
+    await Promise.all(...[files.map(async (file) => {
         if (!file) {
             return;
         }
 
         try {
-            const fileData = await fse.readFile(file, 'utf8');
-            const fileLabels = fileData.split('\n');
-            labels.push(...fileLabels);
+            const data = (await fse.readFile(file, 'utf8'));
+            const dataToArray = data.split('\n');
+            infoMap[file] = dataToArray;
+
         } catch (e) {
             console.error(`file: ${file} errored while reading data: ${e}`);
             return Promise.resolve();
         }
     })]);
 
-    return [...new Set(labels)].filter(Boolean);
+    return infoMap;
+};
+
+/**
+ *
+ * @param {InfoMap} infoMap
+ * @param {string[]} changedFiles
+ * @returns {OwnersMap}
+ */
+const getOwnersMap = (infoMap, changedFiles) => {
+    /** @type {OwnersMap} */
+    const ownersMap = {};
+
+    /** @type {InfoMap} */
+    const infoDirMap = {};
+
+    /**
+     * @param {string[]} owners
+     * @param {string} filePath
+     */
+    const addFileToOwners = (owners, filePath) => {
+        owners.forEach((owner) => {
+           ownersMap[owner].ownedFiles.push(filePath);
+        });
+    };
+
+    Object.entries(infoMap).forEach(([filePath, owners]) => {
+        owners.forEach((owner) => {
+            if (!ownersMap[owner]) {
+                ownersMap[owner] = {
+                    sources: [],
+                    ownedFiles: []
+                }
+            }
+
+            ownersMap[owner].sources.push(filePath);
+        });
+
+        const dir = path.dirname(filePath);
+        infoDirMap[dir] = owners;
+    });
+
+    changedFiles.forEach((file) => {
+        const owners = [...new Set(Object.keys(infoDirMap).reduce((acc, path) => {
+            if (file.startsWith(path)) {
+                acc.push(...infoDirMap[path]);
+            }
+
+            return acc;
+        }, []))];
+
+        addFileToOwners(owners, file);
+    });
+
+    return ownersMap;
+};
+
+/**
+ * @param {OwnersMap} ownersMap
+ * @returns {string}
+ */
+const createReviewersComment = (ownersMap) => {
+    const arrayToList = (array) => {
+        return (array.map((file) => `* ${file}`).join('\n'));
+    };
+
+    /**
+     * @param {string} owner
+     * @param {OwnerData} data
+     */
+    const createCollapsableInfo = (owner, data) => {
+        return (`
+            <details>
+                <summary>${owner}</summary>
+                ### owned files:\n${arrayToList(data.ownedFiles)}
+                ### sources:\n${arrayToList(data.sources)}
+            </details>`
+        );
+    };
+
+    const AMOUNT = `Found ${Object.keys(ownersMap).length} Codeowners\n`;
+
+    const reviewersInfo = [];
+
+    Object.entries(ownersMap).forEach(([owner, data]) => {
+        reviewersInfo.push(createCollapsableInfo(owner, data));
+    })
+
+    return AMOUNT + reviewersInfo.join('\n');
 };
 
 /**
@@ -15550,7 +15640,19 @@ module.exports = {
     getMetaInfoFromFiles,
     filterChangedFiles,
     execWithCatch,
+    getOwnersMap,
+    createReviewersComment,
 };
+
+/** @typedef {Record<string, string[]>} InfoMap */
+
+/** @typedef {Record<string, OwnerData>} OwnersMap */
+
+/**
+ * @typedef {Object} OwnerData
+ * @prop {string[]} sources
+ * @prop {string[]} ownedFiles
+ */
 
 
 /***/ }),
@@ -15763,7 +15865,9 @@ const DEFAULT_ARTIFACT = {
             reviewersFiles = [ownersFilename];
         }
 
-        const reviewersFromFiles = await utils.getMetaInfoFromFiles(reviewersFiles);
+        const reviewersMap = await utils.getMetaInfoFromFiles(reviewersFiles);
+        const ownersMap = utils.getOwnersMap(reviewersMap, changedFiles);
+        const reviewersFromFiles = Object.keys(ownersMap);
 
         const reviewersToRemove = artifactData.reviewers.filter((reviewer) => {
             return !reviewersFromFiles.includes(reviewer);
@@ -15797,13 +15901,10 @@ const DEFAULT_ARTIFACT = {
         }
 
         if (reviewersToAdd.length > 0 || reviewersToRemove.length > 0) {
-            const filesText = reviewersFiles.map((file) => {
-                return `* \`${file.substr(PATH_PREFIX.length + 1)}\``;
-            }).join('\n');
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
                 issue_number: pull_request.number,
-                body: `Found ${reviewersFiles.length} filenames matching: \`${ownersFilename}\` pattern!\n${filesText}`,
+                body: utils.createReviewersComment(ownersMap)
             }));
         }
 
@@ -15841,8 +15942,9 @@ const DEFAULT_ARTIFACT = {
         const labeledByTheAction = artifactData.labels;
 
         // get labels
-        const labelsFiles = await utils.getMetaFiles(changedFiles, labelFilename, 0);
-        const labelsFromFiles = await utils.getMetaInfoFromFiles(labelsFiles);
+        const labelsFiles = await utils.getMetaFiles(changedFiles, labelFilename);
+        const labelsMap = await utils.getMetaInfoFromFiles(labelsFiles);
+        const labelsFromFiles = [...new Set(Object.values(labelsMap).flat())];
 
         const labelsToRemove = labeledByTheAction.filter((label) => {
             return !labelsFromFiles.includes(label);
@@ -15914,50 +16016,56 @@ const DEFAULT_ARTIFACT = {
     };
 
     core.startGroup('Debug');
-    core.info(JSON.stringify(context));
     // core.info(Object.keys(context.payload).toString());
     core.endGroup();
 
-    const {pull_request} = context.payload;
+    switch (context.eventName) {
+        case 'pull_request': {
+            const {pull_request} = context.payload;
 
-    // Works only on pull-requests or comments
-    if (!pull_request) {
-        core.error('Only pull requests events can trigger this action');
-    }
+            /** @type {[string[], ArtifactData]} */
+            let [changedFiles, artifactData] = await Promise.all([
+                getChangedFiles(pull_request.number),
+                getArtifact(),
+            ]);
 
-    /** @type {[string[], ArtifactData]} */
-    let [changedFiles, artifactData] = await Promise.all([
-        getChangedFiles(pull_request.number),
-        getArtifact(),
-    ]);
+            core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
 
-    core.info(`changed Files after Filter: ${JSON.stringify(changedFiles)}`);
+            artifactData = {
+                ...DEFAULT_ARTIFACT,
+                ...artifactData,
+            };
 
-    artifactData = {
-        ...DEFAULT_ARTIFACT,
-        ...artifactData,
-    };
+            core.info(`artifact: ${JSON.stringify(artifactData)}`);
 
-    core.info(`artifact: ${JSON.stringify(artifactData)}`);
+            const handlerData = await pullRequestHandler({
+                changedFiles,
+                pull_request,
+                artifactData,
+            });
 
-    if (pull_request) {
-        const handlerData = await pullRequestHandler({
-            changedFiles,
-            pull_request,
-            artifactData,
-        });
+            core.info(JSON.stringify(handlerData));
 
-        core.info(JSON.stringify(handlerData));
+            artifactData = {
+                ...artifactData,
+                ...handlerData
+            }
 
-        artifactData = {
-            ...artifactData,
-            ...handlerData
+            core.info(JSON.stringify(artifactData));
+            await uploadArtifact(artifactData);
+            break;
         }
 
-        core.info(JSON.stringify(artifactData));
-    }
+        case 'pull_request_review': {
+            const {pull_request_review} = context.payload;
+            core.info(JSON.stringify(pull_request_review));
+            break;
+        }
 
-    await uploadArtifact(artifactData);
+        default: {
+            core.error('Only pull requests events or reviews can trigger this action');
+        }
+    }
 })().catch((error) => {
     core.setFailed(error);
     process.exit(1);

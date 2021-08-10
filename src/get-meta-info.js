@@ -1,6 +1,7 @@
 const fse = require('fs-extra');
 const {promisify} = require('util');
 const {exec} = require('child_process');
+const path = require('path');
 
 const {findNearestFile} = require('./find-nearest-file');
 
@@ -33,28 +34,117 @@ const getMetaFiles = async (changedFiles, filename) => {
 };
 
 /**
- * @param {string[]} labelFiles
- * @returns {string[]}
+ * @param {string[]} files
+ * @returns {InfoMap}
  */
-const getMetaInfoFromFiles = async (labelFiles) => {
-    const labels = [];
+const getMetaInfoFromFiles = async (files) => {
+    const infoMap = {};
 
-    await Promise.all(...[labelFiles.map(async (file) => {
+    await Promise.all(...[files.map(async (file) => {
         if (!file) {
             return;
         }
 
         try {
-            const fileData = await fse.readFile(file, 'utf8');
-            const fileLabels = fileData.split('\n');
-            labels.push(...fileLabels);
+            const data = (await fse.readFile(file, 'utf8'));
+            const dataToArray = data.split('\n');
+            infoMap[file] = dataToArray;
+
         } catch (e) {
             console.error(`file: ${file} errored while reading data: ${e}`);
             return Promise.resolve();
         }
     })]);
 
-    return [...new Set(labels)].filter(Boolean);
+    return infoMap;
+};
+
+/**
+ *
+ * @param {InfoMap} infoMap
+ * @param {string[]} changedFiles
+ * @returns {OwnersMap}
+ */
+const getOwnersMap = (infoMap, changedFiles) => {
+    /** @type {OwnersMap} */
+    const ownersMap = {};
+
+    /** @type {InfoMap} */
+    const infoDirMap = {};
+
+    /**
+     * @param {string[]} owners
+     * @param {string} filePath
+     */
+    const addFileToOwners = (owners, filePath) => {
+        owners.forEach((owner) => {
+           ownersMap[owner].ownedFiles.push(filePath);
+        });
+    };
+
+    Object.entries(infoMap).forEach(([filePath, owners]) => {
+        owners.forEach((owner) => {
+            if (!ownersMap[owner]) {
+                ownersMap[owner] = {
+                    sources: [],
+                    ownedFiles: []
+                }
+            }
+
+            ownersMap[owner].sources.push(filePath);
+        });
+
+        const dir = path.dirname(filePath);
+        infoDirMap[dir] = owners;
+    });
+
+    changedFiles.forEach((file) => {
+        const owners = [...new Set(Object.keys(infoDirMap).reduce((acc, path) => {
+            if (file.startsWith(path)) {
+                acc.push(...infoDirMap[path]);
+            }
+
+            return acc;
+        }, []))];
+
+        addFileToOwners(owners, file);
+    });
+
+    return ownersMap;
+};
+
+/**
+ * @param {OwnersMap} ownersMap
+ * @returns {string}
+ */
+const createReviewersComment = (ownersMap) => {
+    const arrayToList = (array) => {
+        return (array.map((file) => `* ${file}`).join('\n'));
+    };
+
+    /**
+     * @param {string} owner
+     * @param {OwnerData} data
+     */
+    const createCollapsableInfo = (owner, data) => {
+        return (`
+            <details>
+                <summary>${owner}</summary>
+                ### owned files:\n${arrayToList(data.ownedFiles)}
+                ### sources:\n${arrayToList(data.sources)}
+            </details>`
+        );
+    };
+
+    const AMOUNT = `Found ${Object.keys(ownersMap).length} Codeowners\n`;
+
+    const reviewersInfo = [];
+
+    Object.entries(ownersMap).forEach(([owner, data]) => {
+        reviewersInfo.push(createCollapsableInfo(owner, data));
+    })
+
+    return AMOUNT + reviewersInfo.join('\n');
 };
 
 /**
@@ -75,4 +165,16 @@ module.exports = {
     getMetaInfoFromFiles,
     filterChangedFiles,
     execWithCatch,
+    getOwnersMap,
+    createReviewersComment,
 };
+
+/** @typedef {Record<string, string[]>} InfoMap */
+
+/** @typedef {Record<string, OwnerData>} OwnersMap */
+
+/**
+ * @typedef {Object} OwnerData
+ * @prop {string[]} sources
+ * @prop {string[]} ownedFiles
+ */

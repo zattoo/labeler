@@ -203,7 +203,9 @@ const DEFAULT_ARTIFACT = {
             reviewersFiles = [ownersFilename];
         }
 
-        const reviewersFromFiles = await utils.getMetaInfoFromFiles(reviewersFiles);
+        const reviewersMap = await utils.getMetaInfoFromFiles(reviewersFiles);
+        const ownersMap = utils.getOwnersMap(reviewersMap, changedFiles);
+        const reviewersFromFiles = Object.keys(ownersMap);
 
         const reviewersToRemove = artifactData.reviewers.filter((reviewer) => {
             return !reviewersFromFiles.includes(reviewer);
@@ -237,13 +239,10 @@ const DEFAULT_ARTIFACT = {
         }
 
         if (reviewersToAdd.length > 0 || reviewersToRemove.length > 0) {
-            const filesText = reviewersFiles.map((file) => {
-                return `* \`${file.substr(PATH_PREFIX.length + 1)}\``;
-            }).join('\n');
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
                 issue_number: pull_request.number,
-                body: `Found ${reviewersFiles.length} filenames matching: \`${ownersFilename}\` pattern!\n${filesText}`,
+                body: utils.createReviewersComment(ownersMap)
             }));
         }
 
@@ -281,8 +280,9 @@ const DEFAULT_ARTIFACT = {
         const labeledByTheAction = artifactData.labels;
 
         // get labels
-        const labelsFiles = await utils.getMetaFiles(changedFiles, labelFilename, 0);
-        const labelsFromFiles = await utils.getMetaInfoFromFiles(labelsFiles);
+        const labelsFiles = await utils.getMetaFiles(changedFiles, labelFilename);
+        const labelsMap = await utils.getMetaInfoFromFiles(labelsFiles);
+        const labelsFromFiles = [...new Set(Object.values(labelsMap).flat())];
 
         const labelsToRemove = labeledByTheAction.filter((label) => {
             return !labelsFromFiles.includes(label);
