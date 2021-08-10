@@ -15904,10 +15904,7 @@ const DEFAULT_ARTIFACT = {
             });
         }
 
-        core.info(reviewers);
-
         reviewersOnPr = [...new Set([reviewersOnPr, reviewers].flat())];
-        core.info(`reviewersOnPr: ${reviewersOnPr}`);
 
         const reviewersFromFiles = Object.keys(codeowners);
         const artifactReviewers = Object.keys(reviewersByTheAction);
@@ -15947,7 +15944,12 @@ const DEFAULT_ARTIFACT = {
         }
 
         if (queue.length > 0) {
-            await Promise.all(queue);
+            try {
+                await Promise.all(queue);
+            } catch (e) {
+                core.info(e.toString());
+                core.info('error on assigning reviewers');
+            }
         }
 
         core.endGroup();
