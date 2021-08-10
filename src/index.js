@@ -137,7 +137,7 @@ const DEFAULT_ARTIFACT = {
      * @returns {Promise<void>}
      */
     const uploadArtifact = async (artifactData) => {
-        core.info(`uploading artifact: ${JSON.stringify(artifactData)}`);
+        core.info('uploading artifact');
         await fse.writeJSON(`${PATH}/${ARTIFACT_NAME}.json`, artifactData);
         const artifactClient = artifact.create();
         await artifactClient.uploadArtifact(ARTIFACT_NAME, [`${ARTIFACT_NAME}.json`], PATH, {continueOnError: false});
@@ -436,7 +436,7 @@ const DEFAULT_ARTIFACT = {
                 const user = review.user.login;
                 core.info(JSON.stringify(review));
 
-                if (review.state === 'approved' && !acc.includes(user)) {
+                if (review.state === 'APPROVED' && !acc.includes(user)) {
                     acc.push(user);
                 }
 
