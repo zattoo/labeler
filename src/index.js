@@ -356,7 +356,8 @@ const DEFAULT_ARTIFACT = {
     };
 
     core.startGroup('Debug');
-    // core.info(Object.keys(context.payload).toString());
+    core.info(Object.keys(context).toString());
+    core.info(Object.keys(context.payload).toString());
     core.endGroup();
 
     switch (context.eventName) {
