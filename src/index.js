@@ -400,6 +400,7 @@ const DEFAULT_ARTIFACT = {
         case 'pull_request_review': {
             const {pull_request_review} = context.payload;
             core.info(JSON.stringify(pull_request_review));
+            core.info(JSON.stringify(context.payload));
             break;
         }
 
