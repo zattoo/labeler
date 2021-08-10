@@ -435,6 +435,7 @@ const DEFAULT_ARTIFACT = {
 
             const approvers = allReviewersData.reduce((acc, review) => {
                 const user = review.user.login;
+                core.info(review);
 
                 if (review.state === 'approved' && !acc.includes(user)) {
                     acc.push(user);
@@ -443,29 +444,30 @@ const DEFAULT_ARTIFACT = {
                 return acc;
             }, []);
 
+            core.info(approvers);
+
             const isCodeOwner = reviewers.includes(review.user.login);
+            core.info(isCodeOwner);
 
-            core.info(JSON.stringify(approvers));
-
-            if (!isCodeOwner && review.state === 'approved') {
-                await octokit.rest.issues.createComment({
-                    ...repo,
-                    issue_number: pull_request.number,
-                    body: `${review.user.login} is not a Codeowner of the changed files in this PR, not gonna approve`,
-                });
-
-                return;
-            }
-
-            if (isCodeOwner && review.state === 'approved') {
-                if (codeowners.reviewers[review.user.login].ownedFiles.length === changedFiles.length) {
-                    await octokit.rest.issues.createComment({
-                        ...repo,
-                        issue_number: pull_request.number,
-                        body: `${review.user.login} own all the files, we shall approve this`,
-                    });
-                }
-            }
+            // if (!isCodeOwner && review.state === 'approved') {
+            //     await octokit.rest.issues.createComment({
+            //         ...repo,
+            //         issue_number: pull_request.number,
+            //         body: `${review.user.login} is not a Codeowner of the changed files in this PR, not gonna approve`,
+            //     });
+            //
+            //     return;
+            // }
+            //
+            // if (isCodeOwner && review.state === 'approved') {
+            //     if (codeowners.reviewers[review.user.login].ownedFiles.length === changedFiles.length) {
+            //         await octokit.rest.issues.createComment({
+            //             ...repo,
+            //             issue_number: pull_request.number,
+            //             body: `${review.user.login} own all the files, we shall approve this`,
+            //         });
+            //     }
+            // }
 
             await uploadArtifact(artifactData);
 
