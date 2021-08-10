@@ -15904,7 +15904,10 @@ const DEFAULT_ARTIFACT = {
             });
         }
 
+        core.info(reviewers);
+
         reviewersOnPr = [...new Set(reviewersOnPr, reviewers)];
+        core.info(`reviewersOnPr: ${reviewersOnPr}`);
 
         const reviewersFromFiles = Object.keys(codeowners);
         const artifactReviewers = Object.keys(reviewersByTheAction);
