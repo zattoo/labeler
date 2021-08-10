@@ -16023,6 +16023,11 @@ const DEFAULT_ARTIFACT = {
         return labelsFromFiles;
     };
 
+    const getUser = async () => {
+        const authInfo = await octokit.rest.users.getAuthenticated();
+        return authInfo.data.user.login;
+    }
+
     /**
      * @returns {Promise<Record<string, object>>}
      */
@@ -16053,10 +16058,12 @@ const DEFAULT_ARTIFACT = {
         changedFiles,
         artifactData,
         reviewers,
+        user,
     ] = await Promise.all([
         getChangedFiles(),
         getArtifact(),
         getReviewers(),
+        getUser(),
     ]);
 
     const codeowners = await getCodeOwners(pull_request.user.login, changedFiles);
@@ -16081,6 +16088,11 @@ const DEFAULT_ARTIFACT = {
         }
 
         case 'pull_request_review': {
+            // We don't want to go into Infinite loop
+            if (context.payload.review.user.login === user) {
+                return;
+            }
+
             const approvers = Object.keys(reviewers).filter((reviewer) => {
                 return reviewers[reviewer].state === 'APPROVED';
             });
@@ -16098,17 +16110,13 @@ const DEFAULT_ARTIFACT = {
             });
 
             if (approvalRequiredFiles.length > 0) {
-                const [authInfo] = await Promise.all([
-                    octokit.rest.users.getAuthenticated(),
-                    octokit.rest.issues.createComment({
-                        ...repo,
-                        issue_number: pull_request.number,
-                        body: utils.createRequiredApprovalsComment(codeowners, approvalRequiredFiles,PATH_PREFIX),
-                    }),
-                ]);
+                await octokit.rest.issues.createComment({
+                    ...repo,
+                    issue_number: pull_request.number,
+                    body: utils.createRequiredApprovalsComment(codeowners, approvalRequiredFiles,PATH_PREFIX),
+                });
 
-                const user = authInfo.data.login;
-                const approvedByTheCurrentUser = Boolean(reviewers[user]);
+                const approvedByTheCurrentUser = reviewers[user] && reviewers[user].state === 'APPROVED';
 
                 if (approvedByTheCurrentUser) {
                     const review = reviewers[user];
@@ -16124,7 +16132,7 @@ const DEFAULT_ARTIFACT = {
                     ...repo,
                     pull_number,
                     event: 'APPROVE',
-                    body: 'all required approvals achieved, can merge now',
+                    body: 'All required approvals achieved, can merge now',
                 });
             }
 
