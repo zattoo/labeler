@@ -15594,11 +15594,12 @@ const getOwnersMap = (infoMap, changedFiles, createdBy) => {
 
 /**
  * @param {OwnersMap} ownersMap
+ * @param {string} pathPrefix
  * @returns {string}
  */
-const createReviewersComment = (ownersMap) => {
+const createReviewersComment = (ownersMap, pathPrefix) => {
     const arrayToList = (array) => {
-        return (array.map((file) => `* \`${file}\``).join('\n'));
+        return (array.map((file) => `* \`${file.substr(pathPrefix.length + 1)}\``).join('\n'));
     };
 
     /**
@@ -15909,7 +15910,7 @@ const DEFAULT_ARTIFACT = {
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
                 issue_number: pull_request.number,
-                body: utils.createReviewersComment(ownersMap)
+                body: utils.createReviewersComment(ownersMap, PATH_PREFIX)
             }));
         }
 
@@ -16003,11 +16004,12 @@ const DEFAULT_ARTIFACT = {
         pull_request,
         artifactData,
     }) => {
-        // const labels = await autoLabel({
-        //     changedFiles,
-        //     pull_request,
-        //     artifactData,
-        // });
+        const labels = await autoLabel({
+            changedFiles,
+            pull_request,
+            artifactData,
+        });
+
         const reviewers = await assignReviewers({
             changedFiles,
             pull_request,

@@ -242,7 +242,7 @@ const DEFAULT_ARTIFACT = {
             queue.push(octokit.rest.issues.createComment({
                 ...repo,
                 issue_number: pull_request.number,
-                body: utils.createReviewersComment(ownersMap)
+                body: utils.createReviewersComment(ownersMap, PATH_PREFIX)
             }));
         }
 
@@ -336,11 +336,12 @@ const DEFAULT_ARTIFACT = {
         pull_request,
         artifactData,
     }) => {
-        // const labels = await autoLabel({
-        //     changedFiles,
-        //     pull_request,
-        //     artifactData,
-        // });
+        const labels = await autoLabel({
+            changedFiles,
+            pull_request,
+            artifactData,
+        });
+
         const reviewers = await assignReviewers({
             changedFiles,
             pull_request,

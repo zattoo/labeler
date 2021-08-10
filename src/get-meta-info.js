@@ -119,11 +119,12 @@ const getOwnersMap = (infoMap, changedFiles, createdBy) => {
 
 /**
  * @param {OwnersMap} ownersMap
+ * @param {string} pathPrefix
  * @returns {string}
  */
-const createReviewersComment = (ownersMap) => {
+const createReviewersComment = (ownersMap, pathPrefix) => {
     const arrayToList = (array) => {
-        return (array.map((file) => `* \`${file}\``).join('\n'));
+        return (array.map((file) => `* \`${file.substr(pathPrefix.length + 1)}\``).join('\n'));
     };
 
     /**
