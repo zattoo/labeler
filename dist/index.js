@@ -16035,7 +16035,7 @@ const DEFAULT_ARTIFACT = {
                return acc;
             }, []);
 
-            return `* ${file} (${fileOwners.join()}\n`;
+            return `* ${file} (${fileOwners}) \n`;
         });
     }
 
