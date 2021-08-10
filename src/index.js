@@ -336,11 +336,6 @@ const DEFAULT_ARTIFACT = {
         return latestReviews;
     };
 
-    core.startGroup('Debug');
-    core.info(Object.keys(context).toString());
-    core.info(Object.keys(context.payload).toString());
-    core.endGroup();
-
     /** @type {[string[], ArtifactData]} */
     let [
         changedFiles,
@@ -351,8 +346,6 @@ const DEFAULT_ARTIFACT = {
         getArtifact(),
         getReviewers(),
     ]);
-
-    core.info(JSON.stringify(reviewers));
 
     const codeowners = await getCodeOwners(pull_request.user.login, changedFiles);
 
