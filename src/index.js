@@ -213,7 +213,7 @@ const DEFAULT_ARTIFACT = {
         const artifactReviewers = Object.keys(reviewersByTheAction);
 
         const reviewersToRemove = artifactReviewers.filter((reviewer) => !reviewersFromFiles.includes(reviewer));
-        const reviewersToAdd = reviewersFromFiles.filter((reviewer) => reviewersOnPr.includes(reviewer));
+        const reviewersToAdd = reviewersFromFiles.filter((reviewer) => !reviewersOnPr.includes(reviewer));
 
         core.info(`Reviewers assigned to pull-request: ${reviewersOnPr}`);
         core.info(`Reviewers which were assigned by the action: ${artifactReviewers}`);
