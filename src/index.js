@@ -432,17 +432,24 @@ const DEFAULT_ARTIFACT = {
                 pull_number: pull_request.number,
             })).data;
 
-            const approvers = allReviewersData.reduce((acc, review) => {
+            const latestReviews = {};
+
+            allReviewersData.forEach((review) => {
                 const user = review.user.login;
                 core.info(JSON.stringify(review));
 
-                if (review.state === 'APPROVED' && !acc.includes(user)) {
-                    acc.push(user);
+                const hasUserAlready = Boolean(latestReviews[user]);
+
+                if (!hasUserAlready) {
+                    latestReviews[user] = review;
+                } else if (review.submitted_at > latestReviews[user].submitted_at) {
+                    latestReviews[user] = review;
                 }
+            });
 
-                return acc;
-            }, []);
-
+            const approvers = Object.keys(latestReviews).filter((reviewer) => {
+                return latestReviews[reviewer].state === 'APPROVED';
+            });
 
             const allApprovedFiles = [...new Set(approvers.map((approver) => codeowners[approver].ownedFiles).flat())];
             core.info(allApprovedFiles);
