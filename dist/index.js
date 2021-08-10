@@ -16111,10 +16111,32 @@ const DEFAULT_ARTIFACT = {
                 return acc;
             }, []);
 
-            core.info(approvers);
 
-            const isCodeOwner = reviewers.includes(review.user.login);
-            core.info(isCodeOwner);
+            const allApprovedFiles = [...new Set(approvers.map((approver) => codeowners[approver].ownedFiles).flat())];
+            core.info(allApprovedFiles);
+
+            const approvalRequiredFiles = changedFiles.filter((file) => {
+               return !allApprovedFiles.includes(file);
+            });
+
+            core.info(`approvalRequiredFiles: ${approvalRequiredFiles}`);
+
+            if(approvalRequiredFiles.length > 0) {
+                await octokit.rest.issues.createComment({
+                    ...repo,
+                    issue_number: pull_request.number,
+                    body: `Approval is still required for ${approvalRequiredFiles.length} files\n${approvalRequiredFiles}`,
+                });
+            } else {
+                await octokit.rest.issues.createComment({
+                    ...repo,
+                    issue_number: pull_request.number,
+                    body: 'looks good should approve',
+                });
+            }
+
+            // const isCodeOwner = reviewers.includes(review.user.login);
+            // core.info(isCodeOwner);
 
             // if (!isCodeOwner && review.state === 'approved') {
             //     await octokit.rest.issues.createComment({
