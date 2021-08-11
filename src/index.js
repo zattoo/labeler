@@ -10,7 +10,7 @@ const {
     getOctokit,
 } = require('@actions/github');
 
-const utils = require('./get-meta-info');
+const utils = require('./utils');
 
 const ARTIFACT_NAME = 'project-recognition';
 const PATH = '.';
@@ -346,6 +346,37 @@ const DEFAULT_ARTIFACT = {
         return latestReviews;
     };
 
+    /**
+     * @param {OwnersMap} codeowners
+     * @param {string[]} reviewers
+     * @param {string[]} changedFiles
+     * @returns {string[]}
+     */
+    const getApprovalRequiredFils = (codeowners, reviewers, changedFiles) => {
+        const approvers = Object.keys(reviewers).filter((reviewer) => {
+            return reviewers[reviewer].state === 'APPROVED';
+        });
+
+        const allApprovedFiles = [...new Set(approvers.reduce((acc, approver) => {
+            if(codeowners[approver]) {
+                acc.push(...codeowners[approver].ownedFiles);
+            }
+            return acc;
+        }, []))];
+
+        const approvalRequiredFiles = changedFiles.filter((file) => {
+            return !allApprovedFiles.includes(file);
+        });
+
+        return approvalRequiredFiles;
+    };
+
+    core.startGroup('DEBUG');
+    console.log(Object.keys(context));
+    console.log(Object.keys(context.payload));
+    console.log(context.payload.sender);
+    core.endGroup();
+
     /** @type {[string[], ArtifactData]} */
     let [
         changedFiles,
@@ -381,29 +412,12 @@ const DEFAULT_ARTIFACT = {
         }
 
         case 'pull_request_review': {
-            core.info(Object.keys(context.payload));
-            core.info(Object.keys(context.payload.review));
-
             // We don't want to go into Infinite loop
             if (context.payload.review.user.login === user) {
                 break;
             }
 
-            const approvers = Object.keys(reviewers).filter((reviewer) => {
-                return reviewers[reviewer].state === 'APPROVED';
-            });
-
-            const allApprovedFiles = [...new Set(approvers.reduce((acc, approver) => {
-                if(codeowners[approver]) {
-                    acc.push(...codeowners[approver].ownedFiles);
-                }
-                return acc;
-            }, []))];
-            core.info(allApprovedFiles);
-
-            const approvalRequiredFiles = changedFiles.filter((file) => {
-               return !allApprovedFiles.includes(file);
-            });
+            const approvalRequiredFiles = getApprovalRequiredFils(codeowners, reviewers);
 
             if (approvalRequiredFiles.length > 0) {
                 await octokit.rest.issues.createComment({
@@ -415,15 +429,16 @@ const DEFAULT_ARTIFACT = {
                 const approvedByTheCurrentUser = reviewers[user] && reviewers[user].state === 'APPROVED';
 
                 if (approvedByTheCurrentUser) {
-                    const review = reviewers[user];
+                    // Dismiss
                     await octokit.rest.pulls.dismissReview({
                         ...repo,
                         pull_number,
-                        review_id: review.id,
-                        message: 'no sufficient approvals',
+                        review_id: reviewers[user].id,
+                        message: 'No sufficient approvals',
                     });
                 }
             } else {
+                // Approve
                 await octokit.rest.pulls.createReview({
                     ...repo,
                     pull_number,
@@ -472,4 +487,4 @@ const DEFAULT_ARTIFACT = {
  */
 
 
-/** @typedef {import('./get-meta-info').OwnersMap} OwnersMap */
+/** @typedef {import('./utils').OwnersMap} OwnersMap */

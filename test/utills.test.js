@@ -1,7 +1,8 @@
 const {
     getOwnersMap,
-    createReviewersComment,
-} = require('../src/get-meta-info');
+    getMetaFiles,
+    getMetaInfoFromFiles,
+} = require('../src/utils');
 
 const ownersMap = {
     gothban: {
@@ -63,11 +64,26 @@ describe(getOwnersMap.name, () => {
     });
 });
 
-describe(createReviewersComment.name, () => {
-    it('returns a comment', () => {
-       const length = Object.keys(ownersMap).length;
+describe(getMetaFiles.name, () => {
+    it('gets label files', async () => {
+        const changedFiles = ['test/mocks/'];
+        expect(await getMetaFiles(changedFiles, '.owners')).toEqual(['/.owners']);
+    });
 
-       expect(createReviewersComment(ownersMap)).toEqual([]);
+    it('gets label files for multiple files', async () => {
+        const changedFiles = ['test/projects/app/src/features/example.js', 'test/projects/cast/src/index.js'];
+        expect(await getMetaFiles(changedFiles, '.labels')).toEqual(['test/projects/app/.labels', 'test/projects/cast/.labels']);
+    });
 
+    it('doesnt break on dot files', async () => {
+        const changedFiles = ['.github/workflows/pr.yml'];
+        expect(await getMetaFiles(changedFiles, '.labels')).toEqual([null]);
+
+    });
+});
+
+describe(getMetaInfoFromFiles.name,  () => {
+    it('gets labels', async () => {
+        expect(await getMetaInfoFromFiles(['test/projects/app/.labels', 'test/projects/cast/.labels'])).toEqual(['project:app', 'project:common', 'project:cast']);
     });
 });

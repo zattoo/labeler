@@ -15470,238 +15470,6 @@ module.exports = {findNearestFile}
 
 /***/ }),
 
-/***/ 6742:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const fse = __nccwpck_require__(5630);
-const {promisify} = __nccwpck_require__(1669);
-const {exec} = __nccwpck_require__(3129);
-const path = __nccwpck_require__(5622);
-
-const {findNearestFile} = __nccwpck_require__(9772);
-
-const execPromise = promisify(exec);
-
-/**
- * @param {string[]} changedFiles
- * @param {string[]} ignoreFiles
- * @returns {string[]}
- */
-const filterChangedFiles = (changedFiles, ignoreFiles) => {
-    return changedFiles.filter((file) => {
-        return !ignoreFiles.includes(file.split('/').pop());
-    });
-};
-
-/**
- * @param {string[]} changedFiles
- * @param {string} filename
- * @returns {string[]}
- */
-const getMetaFiles = async (changedFiles, filename) => {
-    const queue = changedFiles.map(async (filePath) => {
-        return await findNearestFile(filename, filePath);
-    });
-
-    const results = await Promise.all(queue);
-
-    return [...new Set(results)].filter(Boolean);
-};
-
-/**
- * @param {string[]} files
- * @returns {InfoMap}
- */
-const getMetaInfoFromFiles = async (files) => {
-    const infoMap = {};
-
-    await Promise.all(...[files.map(async (file) => {
-        if (!file) {
-            return;
-        }
-
-        try {
-            const data = (await fse.readFile(file, 'utf8'));
-            const dataToArray = data.split('\n');
-            infoMap[file] = dataToArray.filter(Boolean);
-
-        } catch (e) {
-            console.error(`file: ${file} errored while reading data: ${e}`);
-            return Promise.resolve();
-        }
-    })]);
-
-    return infoMap;
-};
-
-/**
- *
- * @param {InfoMap} infoMap
- * @param {string[]} changedFiles
- * @param {string} createdBy
- * @returns {OwnersMap}
- */
-const getOwnersMap = (infoMap, changedFiles, createdBy) => {
-    /** @type {OwnersMap} */
-    const ownersMap = {};
-
-    /** @type {InfoMap} */
-    const infoDirMap = {};
-
-    /**
-     * @param {string[]} owners
-     * @param {string} filePath
-     */
-    const addFileToOwners = (owners, filePath) => {
-        owners.forEach((owner) => {
-           ownersMap[owner].ownedFiles.push(filePath);
-        });
-    };
-
-    Object.entries(infoMap).forEach(([filePath, owners]) => {
-        owners.forEach((owner) => {
-            if (!ownersMap[owner]) {
-                ownersMap[owner] = {
-                    sources: [],
-                    ownedFiles: []
-                }
-            }
-
-            ownersMap[owner].sources.push(filePath);
-        });
-
-        const dir = path.dirname(filePath);
-        infoDirMap[dir] = owners;
-    });
-
-    changedFiles.forEach((file) => {
-        const owners = [...new Set(Object.keys(infoDirMap).reduce((acc, path) => {
-            if (file.startsWith(path)) {
-                acc.push(...infoDirMap[path]);
-            }
-
-            return acc;
-        }, []))].filter(Boolean);
-
-        addFileToOwners(owners, file);
-    });
-
-    // Remove owner of PR
-    delete ownersMap[createdBy];
-
-    return ownersMap;
-};
-
-/**
- *
- * @param {string} file
- * @param {string} pathPrefix
- * @returns {string}
- */
-const removePrefixPathFromFile = (file, pathPrefix) => {
-    return file.substr(pathPrefix.length + 1);
-};
-
-/**
- * @param {OwnersMap} ownersMap
- * @param {string} pathPrefix
- * @returns {string}
- */
-const createReviewersComment = (ownersMap, pathPrefix) => {
-    const arrayToList = (array) => {
-        return (array.map((file) => `* \`${removePrefixPathFromFile(file, pathPrefix)}\``).join('\n'));
-    };
-
-    /**
-     * @param {string} owner
-     * @param {OwnerData} data
-     */
-    const createCollapsableInfo = (owner, data) => {
-        return (`
-<details>
- <summary>${owner} (${data.ownedFiles.length} files)</summary>
-
- ### Owned files:\n${arrayToList(data.ownedFiles)}
- ### sources:\n${arrayToList(data.sources)}
-</details>`
-        );
-    };
-
-    const AMOUNT = `Found ${Object.keys(ownersMap).length} Codeowners\n`;
-
-    const reviewersInfo = [];
-
-    Object.entries(ownersMap).forEach(([owner, data]) => {
-        reviewersInfo.push(createCollapsableInfo(owner, data));
-    })
-
-    return AMOUNT + reviewersInfo.join('\n');
-};
-
-/**
- * @param {OwnersMap} codeowners
- * @param {string[]} files
- * @param {string} pathPrefix
- */
-const createRequiredApprovalsComment = (codeowners, files, pathPrefix) => {
-    const filesMap = files.map((file) => {
-        const fileOwners = Object.entries(codeowners).reduce((acc, [codeowner, data]) => {
-            if (data.ownedFiles.includes(file)) {
-                acc.push(codeowner);
-            }
-
-            return acc;
-        }, []);
-
-        return `* ${removePrefixPathFromFile(file, pathPrefix)} (${fileOwners.join(', ')})`;
-    }).join('\n');
-
-    return (`
-<details>
-<summary>Approval is still required for ${files.length} files</summary>
-
-${filesMap}
-</details>
-`);
-};
-
-/**
- * @param {string} executionCode
- * @param {string} [cwd]
- */
-const execWithCatch = (executionCode, cwd = '') => {
-    return execPromise(executionCode, {
-        cwd,
-    }).catch((err) => {
-        return Promise.reject(err);
-    });
-};
-
-
-module.exports = {
-    getMetaFiles,
-    getMetaInfoFromFiles,
-    filterChangedFiles,
-    execWithCatch,
-    getOwnersMap,
-    createReviewersComment,
-    removePrefixPathFromFile,
-    createRequiredApprovalsComment,
-};
-
-/** @typedef {Record<string, string[]>} InfoMap */
-
-/** @typedef {Record<string, OwnerData>} OwnersMap */
-
-/**
- * @typedef {Object} OwnerData
- * @prop {string[]} sources
- * @prop {string[]} ownedFiles
- */
-
-
-/***/ }),
-
 /***/ 4351:
 /***/ ((__unused_webpack_module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -15717,7 +15485,7 @@ const {
     getOctokit,
 } = __nccwpck_require__(5438);
 
-const utils = __nccwpck_require__(6742);
+const utils = __nccwpck_require__(1608);
 
 const ARTIFACT_NAME = 'project-recognition';
 const PATH = '.';
@@ -16053,6 +15821,37 @@ const DEFAULT_ARTIFACT = {
         return latestReviews;
     };
 
+    /**
+     * @param {OwnersMap} codeowners
+     * @param {string[]} reviewers
+     * @param {string[]} changedFiles
+     * @returns {string[]}
+     */
+    const getApprovalRequiredFils = (codeowners, reviewers, changedFiles) => {
+        const approvers = Object.keys(reviewers).filter((reviewer) => {
+            return reviewers[reviewer].state === 'APPROVED';
+        });
+
+        const allApprovedFiles = [...new Set(approvers.reduce((acc, approver) => {
+            if(codeowners[approver]) {
+                acc.push(...codeowners[approver].ownedFiles);
+            }
+            return acc;
+        }, []))];
+
+        const approvalRequiredFiles = changedFiles.filter((file) => {
+            return !allApprovedFiles.includes(file);
+        });
+
+        return approvalRequiredFiles;
+    };
+
+    core.startGroup('DEBUG');
+    console.log(Object.keys(context));
+    console.log(Object.keys(context.payload));
+    console.log(context.payload.sender);
+    core.endGroup();
+
     /** @type {[string[], ArtifactData]} */
     let [
         changedFiles,
@@ -16088,29 +15887,12 @@ const DEFAULT_ARTIFACT = {
         }
 
         case 'pull_request_review': {
-            core.info(Object.keys(context.payload));
-            core.info(Object.keys(context.payload.review));
-
             // We don't want to go into Infinite loop
             if (context.payload.review.user.login === user) {
                 break;
             }
 
-            const approvers = Object.keys(reviewers).filter((reviewer) => {
-                return reviewers[reviewer].state === 'APPROVED';
-            });
-
-            const allApprovedFiles = [...new Set(approvers.reduce((acc, approver) => {
-                if(codeowners[approver]) {
-                    acc.push(...codeowners[approver].ownedFiles);
-                }
-                return acc;
-            }, []))];
-            core.info(allApprovedFiles);
-
-            const approvalRequiredFiles = changedFiles.filter((file) => {
-               return !allApprovedFiles.includes(file);
-            });
+            const approvalRequiredFiles = getApprovalRequiredFils(codeowners, reviewers);
 
             if (approvalRequiredFiles.length > 0) {
                 await octokit.rest.issues.createComment({
@@ -16122,15 +15904,16 @@ const DEFAULT_ARTIFACT = {
                 const approvedByTheCurrentUser = reviewers[user] && reviewers[user].state === 'APPROVED';
 
                 if (approvedByTheCurrentUser) {
-                    const review = reviewers[user];
+                    // Dismiss
                     await octokit.rest.pulls.dismissReview({
                         ...repo,
                         pull_number,
-                        review_id: review.id,
-                        message: 'no sufficient approvals',
+                        review_id: reviewers[user].id,
+                        message: 'No sufficient approvals',
                     });
                 }
             } else {
+                // Approve
                 await octokit.rest.pulls.createReview({
                     ...repo,
                     pull_number,
@@ -16179,7 +15962,239 @@ const DEFAULT_ARTIFACT = {
  */
 
 
-/** @typedef {import('./get-meta-info').OwnersMap} OwnersMap */
+/** @typedef {import('./utils').OwnersMap} OwnersMap */
+
+
+/***/ }),
+
+/***/ 1608:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const fse = __nccwpck_require__(5630);
+const {promisify} = __nccwpck_require__(1669);
+const {exec} = __nccwpck_require__(3129);
+const path = __nccwpck_require__(5622);
+
+const {findNearestFile} = __nccwpck_require__(9772);
+
+const execPromise = promisify(exec);
+
+/**
+ * @param {string[]} changedFiles
+ * @param {string[]} ignoreFiles
+ * @returns {string[]}
+ */
+const filterChangedFiles = (changedFiles, ignoreFiles) => {
+    return changedFiles.filter((file) => {
+        return !ignoreFiles.includes(file.split('/').pop());
+    });
+};
+
+/**
+ * @param {string[]} changedFiles
+ * @param {string} filename
+ * @returns {string[]}
+ */
+const getMetaFiles = async (changedFiles, filename) => {
+    const queue = changedFiles.map(async (filePath) => {
+        return await findNearestFile(filename, filePath);
+    });
+
+    const results = await Promise.all(queue);
+
+    return [...new Set(results)].filter(Boolean);
+};
+
+/**
+ * @param {string[]} files
+ * @returns {InfoMap}
+ */
+const getMetaInfoFromFiles = async (files) => {
+    const infoMap = {};
+
+    await Promise.all(...[files.map(async (file) => {
+        if (!file) {
+            return;
+        }
+
+        try {
+            const data = (await fse.readFile(file, 'utf8'));
+            const dataToArray = data.split('\n');
+            infoMap[file] = dataToArray.filter(Boolean);
+
+        } catch (e) {
+            console.error(`file: ${file} errored while reading data: ${e}`);
+            return Promise.resolve();
+        }
+    })]);
+
+    return infoMap;
+};
+
+/**
+ *
+ * @param {InfoMap} infoMap
+ * @param {string[]} changedFiles
+ * @param {string} createdBy
+ * @returns {OwnersMap}
+ */
+const getOwnersMap = (infoMap, changedFiles, createdBy) => {
+    /** @type {OwnersMap} */
+    const ownersMap = {};
+
+    /** @type {InfoMap} */
+    const infoDirMap = {};
+
+    /**
+     * @param {string[]} owners
+     * @param {string} filePath
+     */
+    const addFileToOwners = (owners, filePath) => {
+        owners.forEach((owner) => {
+           ownersMap[owner].ownedFiles.push(filePath);
+        });
+    };
+
+    Object.entries(infoMap).forEach(([filePath, owners]) => {
+        owners.forEach((owner) => {
+            if (!ownersMap[owner]) {
+                ownersMap[owner] = {
+                    sources: [],
+                    ownedFiles: []
+                }
+            }
+
+            ownersMap[owner].sources.push(filePath);
+        });
+
+        const dir = path.dirname(filePath);
+        infoDirMap[dir] = owners;
+    });
+
+    changedFiles.forEach((file) => {
+        const owners = [...new Set(Object.keys(infoDirMap).reduce((acc, path) => {
+            if (file.startsWith(path)) {
+                acc.push(...infoDirMap[path]);
+            }
+
+            return acc;
+        }, []))].filter(Boolean);
+
+        addFileToOwners(owners, file);
+    });
+
+    // Remove owner of PR
+    delete ownersMap[createdBy];
+
+    return ownersMap;
+};
+
+/**
+ *
+ * @param {string} file
+ * @param {string} pathPrefix
+ * @returns {string}
+ */
+const removePrefixPathFromFile = (file, pathPrefix) => {
+    return file.substr(pathPrefix.length + 1);
+};
+
+/**
+ * @param {OwnersMap} ownersMap
+ * @param {string} pathPrefix
+ * @returns {string}
+ */
+const createReviewersComment = (ownersMap, pathPrefix) => {
+    const arrayToList = (array) => {
+        return (array.map((file) => `* \`${removePrefixPathFromFile(file, pathPrefix)}\``).join('\n'));
+    };
+
+    /**
+     * @param {string} owner
+     * @param {OwnerData} data
+     */
+    const createCollapsableInfo = (owner, data) => {
+        return (`
+<details>
+ <summary>${owner} (${data.ownedFiles.length} files)</summary>
+
+ ### Owned files:\n${arrayToList(data.ownedFiles)}
+ ### sources:\n${arrayToList(data.sources)}
+</details>`
+        );
+    };
+
+    const AMOUNT = `Found ${Object.keys(ownersMap).length} Codeowners\n`;
+
+    const reviewersInfo = [];
+
+    Object.entries(ownersMap).forEach(([owner, data]) => {
+        reviewersInfo.push(createCollapsableInfo(owner, data));
+    })
+
+    return AMOUNT + reviewersInfo.join('\n');
+};
+
+/**
+ * @param {OwnersMap} codeowners
+ * @param {string[]} files
+ * @param {string} pathPrefix
+ */
+const createRequiredApprovalsComment = (codeowners, files, pathPrefix) => {
+    const filesMap = files.map((file) => {
+        const fileOwners = Object.entries(codeowners).reduce((acc, [codeowner, data]) => {
+            if (data.ownedFiles.includes(file)) {
+                acc.push(codeowner);
+            }
+
+            return acc;
+        }, []);
+
+        return `* ${removePrefixPathFromFile(file, pathPrefix)} (${fileOwners.join(', ')})`;
+    }).join('\n');
+
+    return (`
+<details>
+<summary>Approval is still required for ${files.length} files</summary>
+
+${filesMap}
+</details>
+`);
+};
+
+/**
+ * @param {string} executionCode
+ * @param {string} [cwd]
+ */
+const execWithCatch = (executionCode, cwd = '') => {
+    return execPromise(executionCode, {
+        cwd,
+    }).catch((err) => {
+        return Promise.reject(err);
+    });
+};
+
+
+module.exports = {
+    getMetaFiles,
+    getMetaInfoFromFiles,
+    filterChangedFiles,
+    execWithCatch,
+    getOwnersMap,
+    createReviewersComment,
+    removePrefixPathFromFile,
+    createRequiredApprovalsComment,
+};
+
+/** @typedef {Record<string, string[]>} InfoMap */
+
+/** @typedef {Record<string, OwnerData>} OwnersMap */
+
+/**
+ * @typedef {Object} OwnerData
+ * @prop {string[]} sources
+ * @prop {string[]} ownedFiles
+ */
 
 
 /***/ }),
