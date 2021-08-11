@@ -15888,7 +15888,7 @@ const DEFAULT_ARTIFACT = {
 
         case 'pull_request_review': {
             // We don't want to go into Infinite loop
-            if (context.payload.review.user.login === user) {
+            if (context.payload.sender.login === user) {
                 break;
             }
 
