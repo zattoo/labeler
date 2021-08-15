@@ -66,9 +66,6 @@ const utils = require('./get-labels');
         getUser(octokit),
     ]);
 
-    core.info(`Label to search for: ${source}`);
-    core.info(`Token user: ${user}`);
-
     // Works only on pull-requests
     if (!pull_request) {
         core.error('Only pull requests events can trigger this action');
@@ -140,7 +137,12 @@ const utils = require('./get-labels');
     if (matrixInput) {
         const matrix = JSON.parse(matrixInput);
 
-        console.log('matrix', matrix);
+        const output = Object.values(matrix).reduce((result, entity) => {
+            result[entity] = labels.filter((label) => label.includes(entity));
+            return result;
+        }, {});
+
+        console.log('output', output);
 
         core.setOutput('matrix', JSON.stringify({
             projects: ['app', 'account'],
