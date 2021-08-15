@@ -5,6 +5,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 2.0.0 - Unreleased
 
+Renamed to `@zattoo/recognition`
+
 ### Added
 - Matrix feature
 
