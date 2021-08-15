@@ -9608,11 +9608,9 @@ const utils = __nccwpck_require__(4077);
 
             // if (list.includes('common')) {
             //     result[entity] = matrix[entity];
-            // } else {
+            // } else if (list.length) {
             //     result[entity] = list;
             // }
-
-            result[entity] = [];
 
             return result;
         }, {});

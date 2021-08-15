@@ -149,11 +149,9 @@ const utils = require('./get-labels');
 
             // if (list.includes('common')) {
             //     result[entity] = matrix[entity];
-            // } else {
+            // } else if (list.length) {
             //     result[entity] = list;
             // }
-
-            result[entity] = [];
 
             return result;
         }, {});
