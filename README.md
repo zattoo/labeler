@@ -1,6 +1,6 @@
-# Project recognition
+# Recognition
 
-GitHub Action to recognize areas in the code that were affected and label by metadata files
+GitHub Action to recognize and label modified code areas.
 
 ## Inputs
 
@@ -8,38 +8,40 @@ GitHub Action to recognize areas in the code that were affected and label by met
 
 `string`
 
-Required. GitHub token
+Required. GitHub token.
 
-### `label_filename`
+### `source`
 
 `string`
 
-Required. Filename which contain label metadata to look for
+Required. Label metadata filename
 
 ## Usage
 
 ### Metadata file
-The metadata file contains list of labels separated by break-line between which should be assigned ot all sub-paths.
+
+The metadata file contains list of labels separated by break-line between which should be assigned ot all sub-paths
+
 ```yml
 # name: projects/common/.labels
-infrastrucrue
+common
 ```
 
-If the changed file was `projects/common/utils/time.js` the action will search for the closest `label_filename` (e.g `.labels`)
+If the changed file was `projects/common/utils/time.js` the action will search for the closest `source` (e.g `.labels`)
 In the current example `projects/common/.labels` is the closest one so all the labels listed in that file will be assigned.
 
 ### Workflow
 
 ````yaml
-name: Project recognition
+name: Recognition
 jobs:
-    assign-labels:
-        name: Assign labels
+    recognition:
+        name: Recognition
         runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v2
-          - uses: zattoo/project-recognition@v1
+          - uses: zattoo/recognition@v2
             with:
               token: ${{secrets.TOKEN}}
-              label_filename: '.labels'
+              source: '.labels'
 ````

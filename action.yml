@@ -1,12 +1,15 @@
-name: 'Project recognition'
+name: 'Recognition'
 description: 'Allocate labels depends on changed files'
 inputs:
-  label_filename:
+  source:
     description: 'Filename which contain label metadata to look for'
     required: true
   token:
     description: 'GitHub token'
     required: true
+outputs:
+  matrix:
+    description: 'Matrix in JSON format'
 runs:
   using: 'node12'
   main: 'dist/index.js'

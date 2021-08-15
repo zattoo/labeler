@@ -53,7 +53,7 @@ const utils = require('./get-labels');
     };
 
     const github_token = core.getInput('token', {required: true});
-    const labelFilename = core.getInput('label_filename', {required: true});
+    const labelFilename = core.getInput('source', {required: true});
     const octokit = getOctokit(github_token);
     const {repo} = context;
     const {pull_request} = context.payload;

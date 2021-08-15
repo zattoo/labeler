@@ -1,5 +1,4 @@
-require('./sourcemap-register.js');module.exports =
-/******/ (() => { // webpackBootstrap
+require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 7351:
@@ -9297,9 +9296,167 @@ module.exports = {
 
 /***/ }),
 
-/***/ 4351:
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ 2877:
+/***/ ((module) => {
 
+module.exports = eval("require")("encoding");
+
+
+/***/ }),
+
+/***/ 2357:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("assert");
+
+/***/ }),
+
+/***/ 7619:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("constants");
+
+/***/ }),
+
+/***/ 8614:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("events");
+
+/***/ }),
+
+/***/ 5747:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("fs");
+
+/***/ }),
+
+/***/ 8605:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("http");
+
+/***/ }),
+
+/***/ 7211:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("https");
+
+/***/ }),
+
+/***/ 1631:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("net");
+
+/***/ }),
+
+/***/ 2087:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("os");
+
+/***/ }),
+
+/***/ 5622:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("path");
+
+/***/ }),
+
+/***/ 2413:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("stream");
+
+/***/ }),
+
+/***/ 4016:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("tls");
+
+/***/ }),
+
+/***/ 8835:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("url");
+
+/***/ }),
+
+/***/ 1669:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("util");
+
+/***/ }),
+
+/***/ 8761:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("zlib");
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __nccwpck_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		var threw = true;
+/******/ 		try {
+/******/ 			__webpack_modules__[moduleId].call(module.exports, module, module.exports, __nccwpck_require__);
+/******/ 			threw = false;
+/******/ 		} finally {
+/******/ 			if(threw) delete __webpack_module_cache__[moduleId];
+/******/ 		}
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/compat */
+/******/ 	
+/******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
+/******/ 	
+/************************************************************************/
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
+(() => {
 const path = __nccwpck_require__(5622);
 const core = __nccwpck_require__(2186);
 const {
@@ -9355,7 +9512,7 @@ const utils = __nccwpck_require__(4077);
     };
 
     const github_token = core.getInput('token', {required: true});
-    const labelFilename = core.getInput('label_filename', {required: true});
+    const labelFilename = core.getInput('source', {required: true});
     const octokit = getOctokit(github_token);
     const {repo} = context;
     const {pull_request} = context.payload;
@@ -9493,168 +9650,9 @@ const utils = __nccwpck_require__(4077);
  * @prop {string} name
  */
 
+})();
 
-/***/ }),
-
-/***/ 2877:
-/***/ ((module) => {
-
-module.exports = eval("require")("encoding");
-
-
-/***/ }),
-
-/***/ 2357:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("assert");;
-
-/***/ }),
-
-/***/ 7619:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("constants");;
-
-/***/ }),
-
-/***/ 8614:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("events");;
-
-/***/ }),
-
-/***/ 5747:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("fs");;
-
-/***/ }),
-
-/***/ 8605:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("http");;
-
-/***/ }),
-
-/***/ 7211:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("https");;
-
-/***/ }),
-
-/***/ 1631:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("net");;
-
-/***/ }),
-
-/***/ 2087:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("os");;
-
-/***/ }),
-
-/***/ 5622:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("path");;
-
-/***/ }),
-
-/***/ 2413:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("stream");;
-
-/***/ }),
-
-/***/ 4016:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("tls");;
-
-/***/ }),
-
-/***/ 8835:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("url");;
-
-/***/ }),
-
-/***/ 1669:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("util");;
-
-/***/ }),
-
-/***/ 8761:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("zlib");;
-
-/***/ })
-
-/******/ 	});
-/************************************************************************/
-/******/ 	// The module cache
-/******/ 	var __webpack_module_cache__ = {};
-/******/ 	
-/******/ 	// The require function
-/******/ 	function __nccwpck_require__(moduleId) {
-/******/ 		// Check if module is in cache
-/******/ 		if(__webpack_module_cache__[moduleId]) {
-/******/ 			return __webpack_module_cache__[moduleId].exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			// no module.id needed
-/******/ 			// no module.loaded needed
-/******/ 			exports: {}
-/******/ 		};
-/******/ 	
-/******/ 		// Execute the module function
-/******/ 		var threw = true;
-/******/ 		try {
-/******/ 			__webpack_modules__[moduleId].call(module.exports, module, module.exports, __nccwpck_require__);
-/******/ 			threw = false;
-/******/ 		} finally {
-/******/ 			if(threw) delete __webpack_module_cache__[moduleId];
-/******/ 		}
-/******/ 	
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/ 	
-/************************************************************************/
-/******/ 	/* webpack/runtime/compat */
-/******/ 	
-/******/ 	__nccwpck_require__.ab = __dirname + "/";/************************************************************************/
-/******/ 	// module exports must be returned from runtime so entry inlining is disabled
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	return __nccwpck_require__(4351);
+module.exports = __webpack_exports__;
 /******/ })()
 ;
 //# sourceMappingURL=index.js.map
