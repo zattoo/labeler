@@ -160,7 +160,7 @@ const utils = require('./get-labels');
             // }
 
             return result;
-        }, 'false');
+        }, {});
 
         core.setOutput('matrix', JSON.stringify(output));
     }
