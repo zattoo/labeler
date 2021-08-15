@@ -130,6 +130,7 @@ const utils = require('./get-labels');
     const labelsFiles = await utils.getLabelsFiles(changedFiles, labelFilename);
     const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
 
+    console.log('labelsFiles', labelsFiles);
     console.log('labelsFromFiles', labelsFromFiles);
 
     const labelsToRemove = labeledByTheAction.filter((label) => {
@@ -159,6 +160,10 @@ const utils = require('./get-labels');
             });
         }));
     }
+
+    core.setOutput('matrix', JSON.stringify({
+        projects: ['app', 'account'],
+    }));
 })().catch((error) => {
     core.setFailed(error);
     process.exit(1);

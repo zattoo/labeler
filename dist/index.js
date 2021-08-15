@@ -9589,6 +9589,7 @@ const utils = __nccwpck_require__(4077);
     const labelsFiles = await utils.getLabelsFiles(changedFiles, labelFilename);
     const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
 
+    console.log('labelsFiles', labelsFiles);
     console.log('labelsFromFiles', labelsFromFiles);
 
     const labelsToRemove = labeledByTheAction.filter((label) => {
@@ -9618,6 +9619,10 @@ const utils = __nccwpck_require__(4077);
             });
         }));
     }
+
+    core.setOutput('matrix', JSON.stringify({
+        projects: ['app', 'account'],
+    }));
 })().catch((error) => {
     core.setFailed(error);
     process.exit(1);

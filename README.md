@@ -4,11 +4,13 @@ GitHub Action to recognize and label modified code areas.
 
 ## Inputs
 
-### `entity`
+### `matrix`
 
 `string`
 
-Optional. Default is "projects".
+Optional. Matrix schema as JSON string.
+
+Example: `'{"project": ["account", "app", "cast"]}'`
 
 ### `source`
 
@@ -24,14 +26,15 @@ Required. GitHub token.
 
 ## Output
 
-Matrix in JSON format. Where field taken from input `entity:`. For example:
+Matrix in JSON format.
+
+For example, there were changes under `project:app` and `project:account` labels, matrix output will be:
 
 ```
 {
     "project": [
         "account",
         "app",
-        "cast"
     ]
 }
 ```

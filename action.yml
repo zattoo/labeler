@@ -1,10 +1,9 @@
 name: 'Recognition'
 description: 'Allocate labels depends on changed files'
 inputs:
-  entity:
-    description: 'Entity to recognize in label source, used as output field in matrix'
+  matrix:
+    description: 'Entities to be recognized under label source, used as output field in matrix. JSON string.'
     required: false
-    default: 'project'
   token:
     description: 'GitHub token'
     required: true
