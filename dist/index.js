@@ -9612,7 +9612,7 @@ const utils = __nccwpck_require__(4077);
             //     result[entity] = list;
             // }
 
-            result[entity] = [];
+            result[entity] = ['cast'];
 
             return result;
         }, {});
