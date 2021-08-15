@@ -147,6 +147,12 @@ const utils = require('./get-labels');
                 .filter((label) => label.includes(prefix))
                 .map((label) => label.split(prefix)[1]);
 
+            if (!list.length) {
+                return result;
+            }
+
+            result = {...result};
+
             // if (list.includes('common')) {
             //     result[entity] = matrix[entity];
             // } else if (list.length) {
@@ -154,7 +160,7 @@ const utils = require('./get-labels');
             // }
 
             return result;
-        }, {});
+        }, null);
 
         core.setOutput('matrix', JSON.stringify(output));
     }

@@ -9606,6 +9606,12 @@ const utils = __nccwpck_require__(4077);
                 .filter((label) => label.includes(prefix))
                 .map((label) => label.split(prefix)[1]);
 
+            if (!list.length) {
+                return result;
+            }
+
+            result = {...result};
+
             // if (list.includes('common')) {
             //     result[entity] = matrix[entity];
             // } else if (list.length) {
@@ -9613,7 +9619,7 @@ const utils = __nccwpck_require__(4077);
             // }
 
             return result;
-        }, {});
+        }, null);
 
         core.setOutput('matrix', JSON.stringify(output));
     }
