@@ -52,9 +52,11 @@ const utils = require('./get-labels');
         return user;
     };
 
-    const github_token = core.getInput('token', {required: true});
-    const labelFilename = core.getInput('source', {required: true});
-    const octokit = getOctokit(github_token);
+    const matrixInput = core.getInput('matrix', {required: true});
+    const source = core.getInput('source', {required: true});
+    const token = core.getInput('token', {required: true});
+
+    const octokit = getOctokit(token);
     const {repo} = context;
     const {pull_request} = context.payload;
 
@@ -63,7 +65,7 @@ const utils = require('./get-labels');
         getUser(octokit),
     ]);
 
-    core.info(`Label to search for: ${labelFilename}`);
+    core.info(`Label to search for: ${source}`);
     core.info(`Token user: ${user}`);
 
     // Works only on pull-requests
@@ -127,17 +129,22 @@ const utils = require('./get-labels');
 
 
     // get labels
-    const labelsFiles = await utils.getLabelsFiles(changedFiles, labelFilename);
-    const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
+    const labelsFiles = await utils.getLabelsFiles(changedFiles, source);
+    const labels = await utils.getLabelsFromFiles(labelsFiles);
 
-    console.log('labelsFiles', labelsFiles);
-    console.log('labelsFromFiles', labelsFromFiles);
+    if (!labels.length) {
+        process.exit(0);
+    }
+
+    const matrix = JSON.parse(matrixInput);
+
+    console.log('matrix', matrix);
 
     const labelsToRemove = labeledByTheAction.filter((label) => {
-        return !labelsFromFiles.includes(label);
+        return !labels.includes(label);
     });
 
-    const labelsToAdd = labelsFromFiles.filter((label) => {
+    const labelsToAdd = labels.filter((label) => {
         return !labeledByTheAction.includes(label);
     });
 
