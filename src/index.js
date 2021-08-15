@@ -137,7 +137,7 @@ const utils = require('./get-labels');
     if (matrixInput) {
         const matrix = JSON.parse(matrixInput);
 
-        const output = Object.values(matrix).reduce((result, entity) => {
+        const output = Object.keys(matrix).reduce((result, entity) => {
             result[entity] = labels.filter((label) => label.includes(entity));
             return result;
         }, {});

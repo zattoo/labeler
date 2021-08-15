@@ -9596,7 +9596,7 @@ const utils = __nccwpck_require__(4077);
     if (matrixInput) {
         const matrix = JSON.parse(matrixInput);
 
-        const output = Object.values(matrix).reduce((result, entity) => {
+        const output = Object.keys(matrix).reduce((result, entity) => {
             result[entity] = labels.filter((label) => label.includes(entity));
             return result;
         }, {});
