@@ -22,13 +22,16 @@ const utils = require('./get-labels');
 
         const listFilesResponse = await octokit.paginate(listFilesOptions);
 
-        core.info("Changed files:");
+        core.info('Changed files:');
+
         const changedFiles = listFilesResponse.map((file) => {
             core.info(` - ${file.filename}`);
 
             // @see https://docs.github.com/en/actions/reference/environment-variables
             return path.join(process.env.GITHUB_WORKSPACE, file.filename);
         });
+
+        core.info(' ');
 
         return changedFiles;
     };
@@ -155,9 +158,7 @@ const utils = require('./get-labels');
 
         console.log('output', output);
 
-        core.setOutput('matrix', JSON.stringify({
-            projects: ['app', 'account'],
-        }));
+        core.setOutput('matrix', JSON.stringify(output));
     }
 
     if (labelsInput) {
