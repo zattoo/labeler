@@ -2,18 +2,18 @@ name: 'Recognition'
 description: 'Allocate labels depends on changed files'
 inputs:
   entity:
-    description: 'Entity to output in matrix'
+    description: 'Entity to recognize in label source, used as output field in matrix'
     required: false
     default: 'project'
   token:
     description: 'GitHub token'
     required: true
   source:
-    description: 'Label metadata filename'
+    description: 'Label source filename'
     required: true
 outputs:
   matrix:
-    description: 'Matrix in JSON format'
+    description: 'Matrix based on label entities in JSON format'
 runs:
   using: 'node12'
   main: 'dist/index.js'

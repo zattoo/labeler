@@ -9505,7 +9505,7 @@ const utils = __nccwpck_require__(4077);
             const auth = await octokit.rest.users.getAuthenticated();
             user =  auth.data.login;
         } catch (e) {
-            core.info('failed to get the authenticated user');
+            core.info('Failed to get the authenticated user');
         }
 
         return user;
@@ -9589,6 +9589,8 @@ const utils = __nccwpck_require__(4077);
     const labelsFiles = await utils.getLabelsFiles(changedFiles, labelFilename);
     const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
 
+    console.log('labelsFromFiles', labelsFromFiles);
+
     const labelsToRemove = labeledByTheAction.filter((label) => {
         return !labelsFromFiles.includes(label);
     });
@@ -9596,11 +9598,6 @@ const utils = __nccwpck_require__(4077);
     const labelsToAdd = labelsFromFiles.filter((label) => {
         return !labeledByTheAction.includes(label);
     });
-
-    core.info(`labels assigned to pull-request: ${labelsOnPr}`);
-    core.info(`labels which were added by the action: ${labeledByTheAction}`);
-    core.info(`labels to remove: ${labelsToRemove}`);
-    core.info(`labels to add: ${labelsToAdd}`);
 
     // add labels
     if (labelsToAdd.length > 0) {

@@ -24,7 +24,7 @@ Required. GitHub token.
 
 ## Output
 
-Matrix in JSON format, for example:
+Matrix in JSON format. Where field taken from input `entity:`. For example:
 
 ```
 {
