@@ -9619,7 +9619,7 @@ const utils = __nccwpck_require__(4077);
             // }
 
             return result;
-        }, null);
+        }, 'false');
 
         core.setOutput('matrix', JSON.stringify(output));
     }
