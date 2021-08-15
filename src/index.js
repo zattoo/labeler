@@ -138,7 +138,18 @@ const utils = require('./get-labels');
         const matrix = JSON.parse(matrixInput);
 
         const output = Object.keys(matrix).reduce((result, entity) => {
-            result[entity] = labels.filter((label) => label.includes(entity));
+            const prefix = `${entity}:`;
+
+            const list = labels
+                .filter((label) => label.includes(prefix))
+                .map((label) => label.split(prefix)[1]);
+
+            if (list.includes('common')) {
+                result[entity] = matrix[entity];
+            } else {
+                result[entity] = list;
+            }
+
             return result;
         }, {});
 
