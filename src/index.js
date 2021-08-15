@@ -139,14 +139,15 @@ const utils = require('./get-labels');
 
     if (matrixInput) {
         const matrix = JSON.parse(matrixInput);
-        console.log('matrix', matrix);
-    }
 
-    if (labelsInput) {
+        console.log('matrix', matrix);
+
         core.setOutput('matrix', JSON.stringify({
             projects: ['app', 'account'],
         }));
+    }
 
+    if (labelsInput) {
         const labelsToRemove = labeledByTheAction.filter((label) => {
             return !labels.includes(label);
         });
