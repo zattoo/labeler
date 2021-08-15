@@ -5,8 +5,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 2.0.0 - Unreleased
 
+### Added
+- Matrix feature
+
 ### Changed
-- [breaking change] rename
+- [breaking change] labels output became conditional
+- [breaking change] renamed `label_filename` to `source`
 
 ## 1.0.0 - 14.07.2021
 
