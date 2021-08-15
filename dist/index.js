@@ -9506,9 +9506,9 @@ const utils = __nccwpck_require__(4077);
 
         try {
             const auth = await octokit.rest.users.getAuthenticated();
-            user =  auth.data.login;
+            user = auth.data.login;
         } catch (e) {
-            core.info('Failed to get the authenticated user');
+            core.info(`Set ${user} user`);
         }
 
         return user;
@@ -9606,16 +9606,16 @@ const utils = __nccwpck_require__(4077);
                 .filter((label) => label.includes(prefix))
                 .map((label) => label.split(prefix)[1]);
 
-            if (list.includes('common')) {
-                result[entity] = matrix[entity];
-            } else {
-                result[entity] = list;
-            }
+            // if (list.includes('common')) {
+            //     result[entity] = matrix[entity];
+            // } else {
+            //     result[entity] = list;
+            // }
+
+            result[entity] = ['cast'];
 
             return result;
         }, {});
-
-        console.log('output', output);
 
         core.setOutput('matrix', JSON.stringify(output));
     }
