@@ -52,6 +52,7 @@ const utils = require('./get-labels');
         return user;
     };
 
+    const labelsInput = core.getInput('labels', {required: true});
     const matrixInput = core.getInput('matrix', {required: true});
     const source = core.getInput('source', {required: true});
     const token = core.getInput('token', {required: true});
@@ -136,41 +137,44 @@ const utils = require('./get-labels');
         process.exit(0);
     }
 
-    const matrix = JSON.parse(matrixInput);
-
-    console.log('matrix', matrix);
-
-    const labelsToRemove = labeledByTheAction.filter((label) => {
-        return !labels.includes(label);
-    });
-
-    const labelsToAdd = labels.filter((label) => {
-        return !labeledByTheAction.includes(label);
-    });
-
-    // add labels
-    if (labelsToAdd.length > 0) {
-        await octokit.rest.issues.addLabels({
-            ...repo,
-            issue_number: pull_request.number,
-            labels: labelsToAdd,
-      });
+    if (matrixInput) {
+        const matrix = JSON.parse(matrixInput);
+        console.log('matrix', matrix);
     }
 
-    // remove labels
-    if (labelsToRemove.length > 0) {
-        await Promise.all(labelsToRemove.map(async (label) => {
-            return await octokit.rest.issues.removeLabel({
+    if (labelsInput) {
+        core.setOutput('matrix', JSON.stringify({
+            projects: ['app', 'account'],
+        }));
+
+        const labelsToRemove = labeledByTheAction.filter((label) => {
+            return !labels.includes(label);
+        });
+
+        const labelsToAdd = labels.filter((label) => {
+            return !labeledByTheAction.includes(label);
+        });
+
+        // add labels
+        if (labelsToAdd.length > 0) {
+            await octokit.rest.issues.addLabels({
                 ...repo,
                 issue_number: pull_request.number,
-                name: label,
+                labels: labelsToAdd,
             });
-        }));
-    }
+        }
 
-    core.setOutput('matrix', JSON.stringify({
-        projects: ['app', 'account'],
-    }));
+        // remove labels
+        if (labelsToRemove.length > 0) {
+            await Promise.all(labelsToRemove.map(async (label) => {
+                return await octokit.rest.issues.removeLabel({
+                    ...repo,
+                    issue_number: pull_request.number,
+                    name: label,
+                });
+            }));
+        }
+    }
 })().catch((error) => {
     core.setFailed(error);
     process.exit(1);

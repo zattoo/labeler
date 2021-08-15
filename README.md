@@ -1,12 +1,20 @@
 # Recognition
 
-GitHub Action to recognize and label modified code areas.
+GitHub Action to recognize affected area based on changed files. Optionally outputs labels.
 
 ## Inputs
 
+### `labels`
+
+`'true' | 'false'`
+
+Optional. Defines whether to output labels
+
+Example: `'{"project": ["account", "app", "cast"]}'`
+
 ### `matrix`
 
-`string`
+`JSON string`
 
 Optional. Matrix schema as JSON string.
 

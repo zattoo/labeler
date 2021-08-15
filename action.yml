@@ -1,9 +1,13 @@
 name: 'Recognition'
-description: 'Allocate labels depends on changed files'
+description: 'Recognizes affected area based on changed files'
 inputs:
   matrix:
     description: 'Entities to be recognized under label source, used as output field in matrix. JSON string.'
     required: false
+  labels:
+    description: 'Defines whether output labels'
+    required: false
+    default: 'false'
   token:
     description: 'GitHub token'
     required: true
