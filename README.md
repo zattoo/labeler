@@ -4,11 +4,11 @@ GitHub Action to recognize and label modified code areas.
 
 ## Inputs
 
-### `token`
+### `entity`
 
 `string`
 
-Required. GitHub token.
+Optional. Default is "projects".
 
 ### `source`
 
@@ -16,11 +16,31 @@ Required. GitHub token.
 
 Required. Label metadata filename
 
+### `token`
+
+`string`
+
+Required. GitHub token.
+
+## Output
+
+Matrix in JSON format, for example:
+
+```
+{
+    "project": [
+        "account",
+        "app",
+        "cast"
+    ]
+}
+```
+
 ## Usage
 
 ### Metadata file
 
-The metadata file contains list of labels separated by break-line between which should be assigned ot all sub-paths
+The metadata file contains list of labels separated by break-line between which should be assigned to all sub-paths
 
 ```yml
 # name: projects/common/.labels

@@ -1,11 +1,15 @@
 name: 'Recognition'
 description: 'Allocate labels depends on changed files'
 inputs:
-  source:
-    description: 'Filename which contain label metadata to look for'
-    required: true
+  entity:
+    description: 'Entity to output in matrix'
+    required: false
+    default: 'project'
   token:
     description: 'GitHub token'
+    required: true
+  source:
+    description: 'Label metadata filename'
     required: true
 outputs:
   matrix:
