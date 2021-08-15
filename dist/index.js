@@ -9602,15 +9602,15 @@ const utils = __nccwpck_require__(4077);
         const output = Object.keys(matrix).reduce((result, entity) => {
             const prefix = `${entity}:`;
 
-            const list = labels
-                .filter((label) => label.includes(prefix))
-                .map((label) => label.split(prefix)[1]);
-
-            if (!list.length) {
-                return result;
-            }
-
-            result = {...result};
+            // const list = labels
+            //     .filter((label) => label.includes(prefix))
+            //     .map((label) => label.split(prefix)[1]);
+            //
+            // if (!list.length) {
+            //     return result;
+            // }
+            //
+            // result = {...result};
 
             // if (list.includes('common')) {
             //     result[entity] = matrix[entity];
