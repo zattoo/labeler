@@ -153,7 +153,7 @@ const utils = require('./get-labels');
             //     result[entity] = list;
             // }
 
-            result[entity] = [];
+            result[entity] = ['cast'];
 
             return result;
         }, {});
