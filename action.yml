@@ -1,7 +1,7 @@
-name: 'Project recognition'
+name: 'Labeler'
 description: 'Allocate labels depends on changed files'
 inputs:
-  label_filename:
+  source:
     description: 'Filename which contain label metadata to look for'
     required: true
   token:

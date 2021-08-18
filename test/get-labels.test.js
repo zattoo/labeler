@@ -20,6 +20,6 @@ describe(getLabelsFiles.name, () => {
 
 describe(getLabelsFromFiles.name,  () => {
     it('gets labels', async () => {
-        expect(await getLabelsFromFiles(['test/projects/app/.labels', 'test/projects/cast/.labels'])).toEqual(['project:app', 'project:common', 'project:cast']);
+        expect((await getLabelsFromFiles(['test/projects/app/.labels', 'test/projects/cast/.labels'])).sort()).toEqual(['project:app', 'project:common', 'project:cast'].sort());
     });
 });
