@@ -4,6 +4,8 @@ const {
     context,
     getOctokit,
 } = require('@actions/github');
+const glob = require('glob-promise');
+
 const utils = require('./get-labels');
 
 
@@ -14,6 +16,7 @@ const utils = require('./get-labels');
      * @returns {string[]}
      */
     const getChangedFiles = async (octokit, pull_number) => {
+        core.startGroup('Changed Files');
         const {repo} = context;
         const listFilesOptions = octokit.rest.pulls.listFiles.endpoint.merge({
             ...repo,
@@ -22,7 +25,6 @@ const utils = require('./get-labels');
 
         const listFilesResponse = await octokit.paginate(listFilesOptions);
 
-        core.info("Changed files:");
         const changedFiles = listFilesResponse.map((file) => {
             core.info(` - ${file.filename}`);
 
@@ -30,46 +32,26 @@ const utils = require('./get-labels');
             return path.join(process.env.GITHUB_WORKSPACE, file.filename);
         });
 
+        core.endGroup();
+
         return changedFiles;
     };
 
-    /**
-     *  Get the user which the token belongs to
-     *  if no user found we fallback to 'github-actions'
-     * @param {InstanceType<typeof GitHub>} octokit
-     * @returns {string}
-     */
-    const getUser = async (octokit) => {
-        let user = 'github-actions';
+    const labelFilename = core.getInput('source', {required: true});
+    const token = core.getInput('token', {required: true});
 
-        try {
-            const auth = await octokit.rest.users.getAuthenticated();
-            user =  auth.data.login;
-        } catch (e) {
-            core.info('failed to get the authenticated user');
-        }
-
-        return user;
-    };
-
-    const github_token = core.getInput('token', {required: true});
-    const labelFilename = core.getInput('label_filename', {required: true});
-    const octokit = getOctokit(github_token);
+    const octokit = getOctokit(token);
     const {repo} = context;
     const {pull_request} = context.payload;
 
-    const [changedFiles, user] = await Promise.all([
-        getChangedFiles(octokit, pull_request.number),
-        getUser(octokit),
-    ]);
-
     core.info(`Label to search for: ${labelFilename}`);
-    core.info(`Token user: ${user}`);
 
     // Works only on pull-requests
     if (!pull_request) {
         core.error('Only pull requests events can trigger this action');
     }
+
+    const changedFiles= await getChangedFiles(octokit, pull_request.number);
 
     // get the current labels on the pull-request
     const labelsOnPr = (await octokit.rest.issues.listLabelsOnIssue({
@@ -81,65 +63,37 @@ const utils = require('./get-labels');
         }
     });
 
-    // get the labels history on the pull-request
-    const query = await octokit.graphql(`{
-      repository(owner: "${repo.owner}", name: "${repo.repo}") {
-        pullRequest(number: ${pull_request.number}) {
-          timelineItems(last: 100, itemTypes: [LABELED_EVENT]) {
-            totalCount
-            edges {
-              node {
-                __typename
-                ... on LabeledEvent {
-                  createdAt
-                  label {
-                    name
-                  }
-                  actor {
-                    login
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }`);
+    const [
+        allLabelsFiles,
+        labelFilesFromChanges,
+    ] = await Promise.all([
+        glob(`**/${labelFilename}`),
+        utils.getLabelsFiles(changedFiles, labelFilename),
+    ]);
 
-    /** @type {LabelInfo[]} */
-    const labelsInfo = query.repository.pullRequest.timelineItems.edges;
+    const [
+        allLabels,
+        labelsFromChanges,
+    ] = await Promise.all([
+        utils.getLabelsFromFiles(allLabelsFiles),
+        utils.getLabelsFromFiles(labelFilesFromChanges),
+    ]);
 
-    // reducing the query to labels only
-    const labeledByTheAction = labelsInfo.reduce((acc, labelInfo) => {
-        const {name} = labelInfo.node.label;
+    core.startGroup('DEBUG');
+    core.info(allLabelsFiles.toString());
+    core.info(allLabels.toString());
+    core.endGroup();
 
-        // If not included already, match github-actions actor and is currently used on the pull-request
-        if (
-            !acc.includes(name) &&
-            labelInfo.node.actor.login === user &&
-            labelsOnPr.includes(name)
-        ) {
-            acc.push(name);
-        }
-
-        return acc;
-    }, []);
-
-
-    // get labels
-    const labelsFiles = await utils.getLabelsFiles(changedFiles, labelFilename);
-    const labelsFromFiles = await utils.getLabelsFromFiles(labelsFiles);
-
-    const labelsToRemove = labeledByTheAction.filter((label) => {
-        return !labelsFromFiles.includes(label);
+    const labelsToRemove = allLabels.filter((label) => {
+        return labelsFromChanges.includes(label);
     });
 
-    const labelsToAdd = labelsFromFiles.filter((label) => {
-        return !labeledByTheAction.includes(label);
+    const labelsToAdd = labelsFromChanges.filter((label) => {
+        return !allLabels.includes(label);
     });
 
     core.info(`labels assigned to pull-request: ${labelsOnPr}`);
-    core.info(`labels which were added by the action: ${labeledByTheAction}`);
+    core.info(`labels which the action responsible for: ${allLabels}`);
     core.info(`labels to remove: ${labelsToRemove}`);
     core.info(`labels to add: ${labelsToAdd}`);
 
