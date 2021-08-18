@@ -1,4 +1,4 @@
-name: 'Project recognition'
+name: 'Labeler'
 description: 'Allocate labels depends on changed files'
 inputs:
   source:
