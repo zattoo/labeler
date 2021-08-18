@@ -41,5 +41,5 @@ jobs:
           - uses: zattoo/project-recognition@v1
             with:
               token: ${{github.token}}
-              label_filename: '.labels'
+              source: '.labels'
 ````

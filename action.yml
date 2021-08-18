@@ -1,4 +1,4 @@
-name: 'Label On Changes'
+name: 'Labeler'
 description: 'Allocate labels depends on changed files'
 inputs:
   source:

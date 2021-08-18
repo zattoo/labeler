@@ -1,5 +1,5 @@
 {
-    "name": "label-on-changes",
+    "name": "labeler",
     "version": "2.0.0",
     "description": "GitHub Action to recognize and label modified code areas.",
     "main": "src/index.js",
