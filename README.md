@@ -1,4 +1,4 @@
-# Project recognition
+# Labeler
 
 GitHub Action to recognize areas in the code that were affected and label by metadata files
 
@@ -10,7 +10,7 @@ GitHub Action to recognize areas in the code that were affected and label by met
 
 Required. GitHub token
 
-### `label_filename`
+### `source`
 
 `string`
 
@@ -22,10 +22,10 @@ Required. Filename which contain label metadata to look for
 The metadata file contains list of labels separated by break-line between which should be assigned ot all sub-paths.
 ```yml
 # name: projects/common/.labels
-infrastrucrue
+project:common
 ```
 
-If the changed file was `projects/common/utils/time.js` the action will search for the closest `label_filename` (e.g `.labels`)
+If the changed file was `projects/common/utils/time.js` the action will search for the closest `source` (e.g `.labels`)
 In the current example `projects/common/.labels` is the closest one so all the labels listed in that file will be assigned.
 
 ### Workflow
@@ -40,6 +40,6 @@ jobs:
           - uses: actions/checkout@v2
           - uses: zattoo/project-recognition@v1
             with:
-              token: ${{secrets.TOKEN}}
+              token: ${{github.token}}
               label_filename: '.labels'
 ````
