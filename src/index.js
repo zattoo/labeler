@@ -84,12 +84,12 @@ const utils = require('./get-labels');
     core.info(allLabels.toString());
     core.endGroup();
 
-    const labelsToRemove = allLabels.filter((label) => {
-        return labelsFromChanges.includes(label);
+    const labelsToRemove = labelsOnPr.filter((label) => {
+        return !labelsFromChanges.includes(label) && allLabels.includes(label);
     });
 
     const labelsToAdd = labelsFromChanges.filter((label) => {
-        return !allLabels.includes(label);
+        return !labelsOnPr.includes(label);
     });
 
     core.info(`labels assigned to pull-request: ${labelsOnPr}`);
