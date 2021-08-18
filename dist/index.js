@@ -12839,11 +12839,6 @@ const utils = __nccwpck_require__(4077);
         utils.getLabelsFromFiles(labelFilesFromChanges),
     ]);
 
-    core.startGroup('DEBUG');
-    core.info(allLabelsFiles.toString());
-    core.info(allLabels.toString());
-    core.endGroup();
-
     const labelsToRemove = labelsOnPr.filter((label) => {
         return !labelsFromChanges.includes(label) && allLabels.includes(label);
     });
