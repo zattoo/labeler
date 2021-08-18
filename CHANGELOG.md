@@ -5,7 +5,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 2.0.0 - 18.08.2021
 
-Renamed to `@zattoo/labeler`
+Renamed to `@zattoo/label-on-changes`
 
 ### Added
 - Detect responsibility on labels by collecting all labels from the source files on the repository
