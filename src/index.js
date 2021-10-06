@@ -17,6 +17,7 @@ const utils = require('./get-labels');
      */
     const getChangedFiles = async (octokit, pull_number) => {
         core.startGroup('Changed Files');
+
         const {repo} = context;
         const listFilesOptions = octokit.rest.pulls.listFiles.endpoint.merge({
             ...repo,
@@ -44,7 +45,7 @@ const utils = require('./get-labels');
     const {repo} = context;
     const {pull_request} = context.payload;
 
-    core.info(`Label to search for: ${labelFilename}`);
+    core.info(`Label file to search for: ${labelFilename}`);
 
     // Works only on pull-requests
     if (!pull_request) {
@@ -78,11 +79,6 @@ const utils = require('./get-labels');
         utils.getLabelsFromFiles(allLabelsFiles),
         utils.getLabelsFromFiles(labelFilesFromChanges),
     ]);
-
-    core.startGroup('DEBUG');
-    core.info(allLabelsFiles.toString());
-    core.info(allLabels.toString());
-    core.endGroup();
 
     const labelsToRemove = labelsOnPr.filter((label) => {
         return !labelsFromChanges.includes(label) && allLabels.includes(label);

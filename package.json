@@ -1,5 +1,5 @@
 {
-    "name": "label-on-changes",
+    "name": "labeler",
     "version": "2.0.0",
     "description": "GitHub Action to recognize and label modified code areas.",
     "main": "src/index.js",
@@ -21,9 +21,9 @@
     "author": "",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/zattoo/label-on-changes/issues"
+        "url": "https://github.com/zattoo/labeler/issues"
     },
-    "homepage": "https://github.com/zattoo/label-on-changes#readme",
+    "homepage": "https://github.com/zattoo/labeler#readme",
     "dependencies": {
         "@actions/core": "1.4.0",
         "@actions/github": "5.0.0",
