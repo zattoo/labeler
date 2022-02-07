@@ -34,6 +34,6 @@
         "@types/fs-extra": "9.0.13",
         "@vercel/ncc": "0.33.1",
         "eslint": "8.8.0",
-        "jest": "27.4.7"
+        "jest": "27.5.0"
     }
 }
