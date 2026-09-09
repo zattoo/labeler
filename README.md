@@ -37,7 +37,7 @@ jobs:
         name: Assign labels
         runs-on: ubuntu-latest
         steps:
-          - uses: actions/checkout@v2
+          - uses: actions/checkout@v7
           - uses: zattoo/project-recognition@v1
             with:
               token: ${{github.token}}
