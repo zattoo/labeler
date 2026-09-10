@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [3.0.0] - 10.09.2029
+
+### Infrastructure
+- `action.yml`: using: `node12` → using: `node24`
+- added `.nvmrc` with `v24`
+- `actions/checkout@v2` → `@v7` in CI workflows
+- Updated packages in packages.json
+- Rebuilt dist
+
 ## [2.0.0] - 18.08.2021
 
 Renamed to `@zattoo/labeler`
